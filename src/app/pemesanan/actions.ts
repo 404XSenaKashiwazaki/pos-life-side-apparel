@@ -1,0 +1,326 @@
+"use server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { sendResponse } from "@/lib/response";
+import { getFilePath, removeFile, uploadFile } from "@/lib/uploadFile";
+import { type Response } from "@/types/response";
+import {  formOrderSchema } from "@/types/zod";
+import {  Order, OrderStatus } from "@prisma/client";
+import { existsSync } from "fs";
+import { revalidatePath } from "next/cache";
+
+
+export const addOrder = async (
+  formdata: FormData
+): Promise<Response<Order>> => {
+  const currentLogin = await auth();
+  const raw = {
+    name: formdata.get("name"),
+    phone: formdata.get("phone"),
+    email: formdata.get("email"),
+    address: formdata.get("address"),
+    notes: formdata.get("notes"),
+    customerId: formdata.get("customerId"),
+    product: formdata.get("product"),
+    color: formdata.get("color"),
+    filename: formdata.get("filename"),
+    status: formdata.get("status"),
+    createdAt: formdata.get("createdAt"),
+    unitPrice: formdata.get("unitPrice"),
+    quantity: formdata.get("quanatity"),
+    totalAmount: formdata.get("totalAmount"),
+    orderNumber: formdata.get("orderNumber"),
+    size: formdata.get("size"),
+    productionDue: formdata.get("productionDue"),
+    handleById: formdata.get("handleById"),
+    sablonTypeId: formdata.get("sablonTypeId"),
+    colorCount: formdata.get("colorCount"),
+    printArea: formdata.get("printArea"),
+  };
+
+  const parseData = formOrderSchema.safeParse(raw);
+  if (!parseData.success)
+    return sendResponse({
+      success: false,
+      message: "Data tidak valid",
+      error: parseData.error,
+    });
+  const { data } = parseData;
+  const file = formdata.get("filename") as File | null;
+  let fileName = "";
+  let fileUrl = "";
+  if (file) {
+    const fileUpload = await uploadFile(file, "uploads");
+    fileName = fileUpload.fileName;
+    fileUrl = fileUpload.fileUrl;
+  } else {
+    fileName = process.env.PREVIEW_IMAGE as string;
+    fileUrl = process.env.PREVIEW_IMAGE_URL as string;
+  }
+
+  try {
+    await prisma.order.create({
+      data: {
+        customerId: data.customerId,
+        orderNumber: data.orderNumber,
+        totalAmount: data.totalAmount,
+        createdAt: data.createdAt,
+        createdById: currentLogin?.user.id,
+        notes: data.notes,
+        status: (data.status as OrderStatus) || OrderStatus.PENDING,
+        productionDue: data.productionDue,
+        handledById: data.handleById,
+        items: {
+          create: {
+            product: data.product,
+            subtotal: data.totalAmount,
+            unitPrice: data.unitPrice,
+            color: data.color,
+            notes: data.notes,
+            quantity: Number(data.quantity),
+            size: data.size,
+            printArea: data.printArea,
+            colorCount: Number(data.colorCount),
+            production: {
+              create: {
+                assignedToId: data.handleById,
+                sablonTypeId: data.sablonTypeId,
+                endDate: data.productionDue,
+                startDate: data.createdAt,
+              },
+            },
+          },
+        },
+        designs: {
+          create: {
+            filename: fileName,
+            fileUrl: fileUrl,
+            previewUrl: fileUrl,
+            uploadedBy: currentLogin?.user.id,
+          },
+        },
+      },
+    });
+    revalidatePath("/pemesanan");
+    return sendResponse({
+      success: true,
+      message: "Menambahkan data pemesanan",
+    });
+  } catch (error) {
+    const filePath = getFilePath(fileUrl);
+    if (
+      file &&
+      fileName !== (process.env.PREVIEW_IMAGE as string) &&
+      existsSync(filePath)
+    ) {
+      console.log("remove file");
+      await removeFile(filePath);
+    }
+
+    console.log({ error });
+    return sendResponse({
+      success: false,
+      message: "Menambahkan data pemesanan",
+    });
+  }
+};
+
+export const updateOrder = async (
+  id: string,
+  formdata: FormData
+): Promise<Response<Order>> => {
+  const currentLogin = await auth();
+  const raw = {
+    name: formdata.get("name"),
+    phone: formdata.get("phone"),
+    email: formdata.get("email"),
+    address: formdata.get("address"),
+    notes: formdata.get("notes"),
+    customerId: formdata.get("customerId"),
+    product: formdata.get("product"),
+    color: formdata.get("color"),
+    filename: formdata.get("filename"),
+    status: formdata.get("status"),
+    createdAt: formdata.get("createdAt"),
+    unitPrice: formdata.get("unitPrice"),
+    quantity: formdata.get("quantity"),
+    totalAmount: formdata.get("totalAmount"),
+    orderNumber: formdata.get("orderNumber"),
+    size: formdata.get("size"),
+    productionDue: formdata.get("productionDue"),
+    handleById: formdata.get("handleById"),
+    sablonTypeId: formdata.get("sablonTypeId"),
+    colorCount: formdata.get("colorCount"),
+    printArea: formdata.get("printArea"),
+  };
+
+  const parseData = formOrderSchema.safeParse(raw);
+
+  if (!parseData.success)
+    return sendResponse({
+      success: false,
+      message: "Data tidak valid",
+      error: parseData.error,
+    });
+
+  const file = formdata.get("filename") as File | null;
+  let fileName = "";
+  let fileUrl = "";
+  const dataInDb = await prisma.order.findUnique({
+    where: { id },
+    include: { items: true, designs: true },
+  });
+  if (!dataInDb)
+    return sendResponse({
+      success: false,
+      message: "Mendapatkan data pemesanan",
+    });
+  try {
+    const { data } = parseData;
+    if (!file) {
+      fileName = dataInDb.designs[0].filename;
+      fileUrl = dataInDb.designs[0].fileUrl;
+    } else {
+      const filePath = getFilePath(dataInDb.designs[0].fileUrl);
+      const fileUpload = await uploadFile(file, "uploads");
+      fileName = fileUpload.fileName;
+      fileUrl = fileUpload.fileUrl;
+      if (
+        dataInDb.designs[0].filename !==
+          (process.env.PREVIEW_IMAGE as string) &&
+        existsSync(filePath)
+      ) {
+        console.log("remove file");
+        await removeFile(filePath);
+      }
+    }
+
+    await prisma.$transaction([
+      prisma.order.update({
+        data: {
+          customerId: data.customerId,
+          orderNumber: data.orderNumber,
+          totalAmount: data.totalAmount,
+          createdAt: data.createdAt,
+          createdById: currentLogin?.user.id,
+          notes: data.notes,
+          status: (data.status as OrderStatus) || OrderStatus.PENDING,
+          productionDue: data.productionDue,
+          handledById: data.handleById,
+          designs: {
+            update: {
+              where: { id: dataInDb.designs[0].id },
+              data: {
+                filename: fileName,
+                fileUrl: fileUrl,
+                previewUrl: fileUrl,
+                uploadedBy: currentLogin?.user.id,
+              },
+            },
+          },
+          items: {
+            update: {
+              where: { id: dataInDb.items[0].id },
+              data: {
+                product: data.product,
+                subtotal: data.totalAmount,
+                unitPrice: data.unitPrice,
+                color: data.color,
+                notes: data.notes,
+                quantity: Number(data.quantity),
+                size: data.size,
+                printArea: data.printArea,
+                colorCount: Number(data.colorCount),
+                production: {
+                  update: {
+                    data: {
+                      assignedToId: data.handleById,
+                      sablonTypeId: data.sablonTypeId,
+                      endDate: data.productionDue,
+                      startDate: data.createdAt,
+                    },
+                    where: {
+                      orderItemId: dataInDb.items[0].id,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        where: { id },
+      }),
+    ]);
+    revalidatePath("/pemesanan");
+    return sendResponse({
+      success: true,
+      message: "Mengupdate data pemesanan",
+    });
+  } catch (error) {
+    const filePath = getFilePath(fileUrl);
+    if (
+      file &&
+      (fileName !== (process.env.PREVIEW_IMAGE as string) ||
+        dataInDb.designs[0].filename !==
+          (process.env.PREVIEW_IMAGE as string)) &&
+      existsSync(filePath)
+    ) {
+      await removeFile(filePath);
+      console.log("remove file");
+    }
+    console.log({ error });
+
+    return sendResponse({
+      success: false,
+      message: "Mengupdate data pemesanan",
+    });
+  }
+};
+export const deleteOrder = async (id: string): Promise<Response<Order>> => {
+  try {
+    const dataInDb = await prisma.order.findUnique({
+      where: { id },
+      include: { designs: true, payments: true },
+    });
+
+    if (!dataInDb)
+      return sendResponse({
+        success: false,
+        message: "Mendapatkan data pemesanan",
+      });
+    const filePath = getFilePath(dataInDb.designs[0].fileUrl);
+    const payments = dataInDb.payments;
+    if (payments && Array.isArray(payments) && payments.length > 1) {
+      payments.forEach(async (e) => {
+        if (
+           e.filename !==
+            (process.env.PREVIEW_IMAGE as string) &&
+          existsSync(filePath)
+        ) {
+          await removeFile(getFilePath(e.reference));
+          console.log("remove file");
+        }
+      });
+    }
+    await prisma.order.delete({ where: { id } });
+    if (
+      dataInDb.designs[0].filename !== (process.env.PREVIEW_IMAGE as string) &&
+      existsSync(filePath)
+    ) {
+      await removeFile(filePath);
+      console.log("remove file");
+    }
+    revalidatePath("pemesanan");
+    return sendResponse({
+      success: true,
+      message: "Menghapus data pemesanan",
+    });
+  } catch (error) {
+    console.log({ error });
+
+    return sendResponse({
+      success: false,
+      message: "Menghapus data pemesanan",
+    });
+  }
+};
