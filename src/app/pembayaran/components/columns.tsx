@@ -9,40 +9,54 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import React  from "react";
+import React from "react";
 import { useModal } from "@/components/providers/Modal-provider";
 import { ColumnPaymentTypeDefProps } from "@/types/datatable";
 import FormPage from "./form";
 import DetailPage from "./detail";
-import { Prisma } from "@prisma/client";
+import { PaymentMethods, Prisma } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { IconAlertCircle, IconCreditCardPay, IconInfoCircle } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconCreditCardPay,
+  IconInfoCircle,
+} from "@tabler/icons-react";
 import { useSheet } from "@/components/providers/Sheet-provider";
 import DeleteModal from "./delete";
 
 interface CellActionProps {
+  payments: PaymentMethods[];
   row: Row<ColumnPaymentTypeDefProps>;
   orders: Prisma.OrderGetPayload<{
-    include: { customer: true; items: true; payments: true };
+    include: {
+      customer: true;
+      items: {
+        include: {
+          products: true;
+        };
+      };
+      payments: true;
+    };
   }>[];
 }
 
-const CellAction = ({ row, orders }: CellActionProps) => {
+const CellAction = ({ row, orders, payments }: CellActionProps) => {
   const { modal, setOpen } = useModal();
   const { sheet } = useSheet();
 
-
   const showModalDelete = () => {
     modal({
-      title:  <div className="flex gap-1">
+      title: (
+        <div className="flex gap-1">
           <IconAlertCircle className="h-5 w-5" />
           Apakah Kamu Benar-benar Yakin?
-        </div>,
+        </div>
+      ),
       description:
         "Tindakan ini tidak dapat dibatalkan. Tindakan ini akan menghapus data Anda secara permanen",
-      body: <DeleteModal id={row.original.id} setOpen={setOpen}/>
+      body: <DeleteModal id={row.original.id} setOpen={setOpen} />,
     });
   };
 
@@ -57,9 +71,12 @@ const CellAction = ({ row, orders }: CellActionProps) => {
       description: "form untuk edit data pembayaran ",
       content: (
         <FormPage
+          payments={payments}
           id={row.original.id}
+          amountReturn={row.original.amountReturn ?? 0}
           amount={row.original.amount}
-          method={row.original.method}
+          method={row.original.methodId}
+          orderAmount={row.original.order.totalAmount}
           orderId={row.original.orderId}
           paidAt={row.original.paidAt ?? ""}
           reference={row.original.reference ?? ""}
@@ -76,10 +93,12 @@ const CellAction = ({ row, orders }: CellActionProps) => {
 
   const showModalDetail = () => {
     modal({
-      title:  <div className="flex gap-1">
-                <IconInfoCircle className="h-5 w-5" />
-                Detail Data Pembayaran
-              </div>,
+      title: (
+        <div className="flex gap-1">
+          <IconInfoCircle className="h-5 w-5" />
+          Detail Data Pembayaran
+        </div>
+      ),
       body: <DetailPage id={row.original.id} />,
       description: "Detail data pembayaran",
       size: "sm:max-w-2xl",
@@ -110,7 +129,10 @@ const CellAction = ({ row, orders }: CellActionProps) => {
 
 export const columns = ({
   orders,
-}: Pick<CellActionProps, "orders">): ColumnDef<ColumnPaymentTypeDefProps>[] => [
+  payments,
+}: Pick<CellActionProps, "orders"> & {
+  payments: PaymentMethods[];
+}): ColumnDef<ColumnPaymentTypeDefProps>[] => [
   {
     id: "select",
     header: () => <div>No</div>,
@@ -211,6 +233,8 @@ export const columns = ({
   {
     id: "actions",
     header: () => <div>Action</div>,
-    cell: ({ row }) => <CellAction row={row} orders={orders} />,
+    cell: ({ row }) => (
+      <CellAction row={row} orders={orders} payments={payments} />
+    ),
   },
 ];

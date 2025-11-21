@@ -4,16 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { sendResponse } from "@/lib/response";
 import { Response } from "@/types/response";
 import {
-  Customer,
-  Order,
   OrderStatus,
   PaymentStatus,
   Prisma,
-} from "@/generated/prisma/client";
-import { endOfMonth, startOfMonth, subMonths } from "date-fns";
-import { getOrders } from "../pemesanan/queries";
-import { getCustomers } from "../pelanggan/queries";
-import { ColumnOrderTypeDefProps } from "@/types/datatable";
+} from "@prisma/client";
 
 export type ByStatusOrdersToCard = {
   status: OrderStatus;

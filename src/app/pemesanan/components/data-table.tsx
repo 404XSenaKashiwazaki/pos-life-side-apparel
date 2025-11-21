@@ -30,7 +30,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { columns } from "./columns";
-import { Customer, Product, SablonType, User } from "@prisma/client";
+import {
+  Customer,
+  PaymentMethods,
+  Product,
+  SablonType,
+  User,
+} from "@prisma/client";
 import FormPage from "./form";
 import { ColumnOrderTypeDefProps } from "@/types/datatable";
 import { useSheet } from "@/components/providers/Sheet-provider";
@@ -42,6 +48,7 @@ interface DataTableProps {
   handle: User[];
   sablon: SablonType[];
   products: Product[];
+  payments: PaymentMethods[];
 }
 
 export const DataTable = ({
@@ -50,6 +57,7 @@ export const DataTable = ({
   handle,
   sablon,
   products,
+  payments,
 }: DataTableProps) => {
   const { sheet } = useSheet();
   const [mounted, setMounted] = React.useState(false);
@@ -64,7 +72,7 @@ export const DataTable = ({
   const [rowSelection, setRowSelection] = React.useState({});
   const table = useReactTable({
     data,
-    columns: columns({ customer, handle, sablon, products }),
+    columns: columns({ customer, handle, sablon, products, payments }),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -87,13 +95,14 @@ export const DataTable = ({
       title: (
         <span className="flex items-center gap-1 text-muted-foreground font-medium">
           <IconShoppingCartPlus className="h-4 w-4" />
-          Form tambah data pemesanan
+          Tambah Data Pemesanan
         </span>
       ),
       description: "form untuk tambah data pemesanan ",
       content: (
         <FormPage
           products={products}
+          payments={payments}
           sablon={sablon}
           handle={handle}
           customer={customer}
@@ -113,7 +122,7 @@ export const DataTable = ({
           onClick={() => showModalAdd()}
         >
           <PlusIcon />
-          Tambah pemesanan
+          Tambah Pemesanan
         </Button>
       </div>
       <div className="flex items-center py-4">

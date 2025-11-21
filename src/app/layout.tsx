@@ -46,6 +46,9 @@ export default async function RootLayout({
                 name: site?.name,
                 filename: site?.filename,
                 fileProofUrl: site?.fileProofUrl,
+                address: site?.address,
+                email: site?.email,
+                phone: site?.phone
               }}
             >
               <SheetProvider>

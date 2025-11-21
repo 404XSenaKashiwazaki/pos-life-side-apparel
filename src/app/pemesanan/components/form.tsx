@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { string, z } from "zod";
 import {
   Form,
   FormControl,
@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Customer,
   OrderStatus,
+  PaymentMethods,
   Product,
   SablonType,
   User,
@@ -55,6 +56,7 @@ interface FormOrderProps {
   sablon: SablonType[];
   id?: string | null;
   products: Product[];
+  payments: PaymentMethods[];
 }
 
 type AreaSablons = {
@@ -106,15 +108,28 @@ const FormPage = ({
   colorCount,
   printArea,
   products,
+  discountAmount,
+  shippingFee,
+  printAreas,
+  paymentMethod,
+  noPayment,
+  payments,
 }: Partial<z.infer<typeof formOrderSchema>> & FormOrderProps) => {
+  console.log({ quantity });
+
   const [preview, setPreview] = useState<string | null>(previewUrl ?? null);
   const [orderNumberValue, setOrderNumberValue] = useState<string | null>(
     orderNumber ?? ""
   );
+  const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const { setOpen } = useSheet();
-  const [sellingPrice, setSelingPrice] = useState<number>(0);
-  const [basePrice, setBasePrice] = useState<number>(0);
+  const [noPayments, setNoPayments] = useState<number>(
+    id && noPayment ? noPayment : 0
+  );
+  const [namePayment, setNamePayment] = useState<string>(
+    id && paymentMethod ? paymentMethod : ""
+  );
   const [productBasePrice, setProductBasePrice] = useState<number>(0);
 
   useEffect(() => {
@@ -145,15 +160,19 @@ const FormPage = ({
       createdAt: createdAt
         ? formatDateIDForm(createdAt ?? "")
         : new Date().toISOString(),
-      unitPrice: unitPrice ?? 1000,
-      quantity: quantity ?? 1,
-      totalAmount: totalAmount ?? 1000,
+      unitPrice: unitPrice ?? 0,
+      quantity: quantity ?? 0,
+      totalAmount: totalAmount ?? 0,
       orderNumber: orderNumber ? orderNumber : orderNumberValue ?? "",
       productionDue: productionDue
         ? formatDateIDForm(productionDue ?? "")
         : currentDate.toISOString(),
-      colorCount: colorCount ?? 1,
-      printArea: printArea ?? 1,
+      colorCount: colorCount ?? 0,
+      printArea: printArea ?? 0,
+      discountAmount: discountAmount ?? 0,
+      shippingFee: shippingFee ?? 0,
+      paymentMethod: paymentMethod ?? "",
+      noPayment: noPayment ?? 0,
     },
   });
 
@@ -179,6 +198,7 @@ const FormPage = ({
     formData.append("email", values.email ?? "");
     formData.append("address", values.address ?? "");
     formData.append("name", values.name ?? "");
+    formData.append("printAreas", values.printAreas ?? "");
     formData.append(
       "productionDue",
       toLocalDBFormat(new Date(values.productionDue ?? "")).toISOString()
@@ -187,7 +207,10 @@ const FormPage = ({
     formData.append("sablonTypeId", values.sablonTypeId);
     formData.append("colorCount", JSON.stringify(values.colorCount));
     formData.append("printArea", JSON.stringify(values.printArea));
-
+    formData.append("shippingFee", JSON.stringify(values.shippingFee));
+    formData.append("discountAmount", JSON.stringify(values.discountAmount));
+    formData.append("paymentMethod", values.paymentMethod);
+    formData.append("noPayment", JSON.stringify(values.noPayment));
     try {
       setLoading(true);
       const { success, message, error } = id
@@ -201,8 +224,13 @@ const FormPage = ({
           closeButton: true,
         });
       }
-      if (error) toast.error("Ops...");
+      if (error) {
+        console.log({ error });
+        toast.error("Ops...");
+      }
     } catch (error) {
+      console.log({ error });
+
       toast.error("Ops...");
     } finally {
       setLoading(false);
@@ -219,16 +247,22 @@ const FormPage = ({
     form.setValue("orderNumber", res);
   };
 
+  //  useEffect(() => {
+  //   if (id && unitPrice) {
+  //     setProductBasePrice(unitPrice);
+  //   }
+  // }, [id, unitPrice]);
+
   const findCustomer = (id: string) =>
     customer.find((e) => String(e.id) === id);
   // Hitung otomatis unitPrice & totalAmount
   useEffect(() => {
     const sablonId = form.getValues("sablonTypeId");
     const sab = sablon.find((e) => e.id === sablonId);
-  
+
     const colorCount = Number(form.getValues("colorCount"));
     const printArea = Number(form.getValues("printArea"));
-    const qty = Number(form.getValues("quantity") || 1);
+    const qty = Number(form.getValues("quantity") || quantity || 1);
 
     let sablonCost = 0;
     const colorPrice = sab?.pricePerColor ?? 0;
@@ -239,7 +273,8 @@ const FormPage = ({
     const unitPrice = productBasePrice + sablonCost;
 
     form.setValue("unitPrice", unitPrice);
-    form.setValue("totalAmount", unitPrice * qty);
+
+    form.setValue("totalAmount", unitPrice * qty); //error di edit page
   }, [
     form.watch("sablonTypeId"),
     form.watch("colorCount"),
@@ -247,6 +282,25 @@ const FormPage = ({
     form.watch("quantity"),
     productBasePrice,
   ]);
+
+  // useEffect(() => {
+  //   const sablonId = form.watch("sablonTypeId");
+  //   const sab = sablon.find((e) => e.id === sablonId);
+
+  //   const colorCount = Number(form.watch("colorCount"));
+  //   const printArea = Number(form.watch("printArea"));
+  //   const qty = Number(form.watch("quantity") || 1);
+
+  //   const colorPrice = sab?.pricePerColor ?? 0;
+  //   const sablonCost = sab
+  //     ? sab.basePrice + colorPrice * colorCount * printArea
+  //     : 0;
+
+  //   const finalUnitPrice = productBasePrice + sablonCost;
+
+  //   form.setValue("unitPrice", finalUnitPrice);
+  //   form.setValue("totalAmount", finalUnitPrice * qty);
+  // }, [productBasePrice, sablon]);
 
   return (
     <div className="w-full mb-10">
@@ -277,7 +331,10 @@ const FormPage = ({
               name="customerId"
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Pemesan/pelanggan</FormLabel>
+                  <FormLabel>
+                    Pemesan/pelanggan{" "}
+                    <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -292,6 +349,10 @@ const FormPage = ({
                           String(customerValue?.address)
                         );
                         form.setValue("name", customerValue.name);
+                        form.clearErrors("phone");
+                        form.clearErrors("email");
+                        form.clearErrors("address");
+                        form.clearErrors("name");
                       }
                     }}
                     defaultValue={field.value}
@@ -319,7 +380,9 @@ const FormPage = ({
               name="phone"
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Nomor hp</FormLabel>
+                  <FormLabel>
+                    Nomor hp <span className="text-red-600 font-sm">*</span>{" "}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -340,7 +403,9 @@ const FormPage = ({
               name="email"
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>
+                    Email <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -359,7 +424,9 @@ const FormPage = ({
               name="address"
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Alamat</FormLabel>
+                  <FormLabel>
+                    Alamat <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       className="w-full "
@@ -386,7 +453,9 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Produk</FormLabel>
+                  <FormLabel>
+                    Produk <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -404,6 +473,11 @@ const FormPage = ({
 
                       const qty = form.getValues("quantity") ?? 1;
                       form.setValue("totalAmount", price * qty);
+
+                      form.clearErrors("size");
+                      form.clearErrors("color");
+                      form.clearErrors("quantity");
+                      form.clearErrors("totalAmount");
                     }}
                     defaultValue={field.value}
                   >
@@ -415,6 +489,14 @@ const FormPage = ({
                     <SelectContent>
                       {products.map((e) => (
                         <SelectItem key={e.id} value={e.id}>
+                          <Image
+                            src={e.fileUrl ?? ""}
+                            className="w-10  h-10"
+                            width={100}
+                            height={100}
+                            priority
+                            alt={e.name}
+                          />{" "}
                           {e.name} - {e.size} - {e.color}
                         </SelectItem>
                       ))}
@@ -430,7 +512,9 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Warna</FormLabel>
+                  <FormLabel>
+                    Warna <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -453,7 +537,9 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Type sablon</FormLabel>
+                  <FormLabel>
+                    Type Sablon <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -472,6 +558,9 @@ const FormPage = ({
 
                       const qty = form.getValues("quantity") ?? 1;
                       form.setValue("totalAmount", finalUnitPrice * qty);
+                      form.clearErrors("quantity");
+                      form.clearErrors("unitPrice");
+                      form.clearErrors("totalAmount");
                     }}
                     defaultValue={field.value}
                   >
@@ -499,14 +588,22 @@ const FormPage = ({
                 disabled={loading}
                 render={({ field }) => (
                   <FormItem className="w-full">
-                    <FormLabel>Jumlah warna cetak</FormLabel>
+                    <FormLabel>
+                      Jumlah Warna Cetak{" "}
+                      <span className="text-red-600 font-sm">*</span>
+                    </FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         className="w-full "
                         placeholder="jumlah warna cetak"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={
+                          form.getValues("colorCount") === 0 ? "" : field.value
+                        }
+                        onChange={(e) => {
+                          field.onChange(Number(e.target.value));
+                          form.setValue("colorCount", Number(e.target.value));
+                        }}
                       />
                     </FormControl>
                     <FormMessage className=" text-xs text-destructive min-h-[20px]" />
@@ -519,16 +616,20 @@ const FormPage = ({
                 disabled={loading}
                 render={({ field }) => (
                   <FormItem className="w-full">
-                    <FormLabel>Area Cetak</FormLabel>
+                    <FormLabel>
+                      Area Cetak <span className="text-red-600 font-sm">*</span>
+                    </FormLabel>
                     <Select
                       onValueChange={(value) => {
                         const area = AreaSablon.filter((e) => e.nama === value);
                         field.onChange(area[0].jmlh);
+                        form.setValue("printAreas", area[0].nama);
                       }}
+                      defaultValue={printAreas}
                     >
                       <FormControl className="w-full">
                         <SelectTrigger>
-                          <SelectValue placeholder="Pilih yang mengerjakan" />
+                          <SelectValue placeholder="Pilih area cetak" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -552,7 +653,9 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Ukuran</FormLabel>
+                  <FormLabel>
+                    Ukuran <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -572,20 +675,26 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Jumlah</FormLabel>
+                  <FormLabel>
+                    Jumlah <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       className="w-full "
                       placeholder="Jumlah"
-                      {...field}
+                      value={
+                        form.getValues("quantity") === 0 ? "" : field.value
+                      }
                       onChange={(e) => {
                         field.onChange(Number(e.target.value));
+                        form.setValue("quantity", Number(e.target.value));
                         const getUnitPrice = form.getValues("unitPrice");
                         if (getUnitPrice) {
                           const totalAmountValue =
                             Number(e.target.value) * Number(getUnitPrice);
                           form.setValue("totalAmount", totalAmountValue);
+                          form.clearErrors("totalAmount");
                         }
                       }}
                     />
@@ -602,14 +711,18 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Harga satuan</FormLabel>
+                  <FormLabel>
+                    Harga Satuan <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       className="w-full"
                       placeholder="Harga satuan"
-                      {...field}
                       readOnly
+                      value={
+                        form.getValues("unitPrice") === 0 ? "" : field.value
+                      }
                     />
                   </FormControl>
                   <FormMessage className=" text-xs text-destructive min-h-[20px]" />
@@ -622,7 +735,9 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Sub total</FormLabel>
+                  <FormLabel>
+                    Sub Total <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -630,7 +745,13 @@ const FormPage = ({
                       className="w-full "
                       placeholder="Sub total"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={
+                        totalAmount
+                          ? form.watch("totalAmount")
+                            ? field.value
+                            : totalAmount
+                          : field.value
+                      }
                     />
                   </FormControl>
                   <FormMessage className=" text-xs text-destructive min-h-[20px]" />
@@ -647,7 +768,9 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Desain file</FormLabel>
+                  <FormLabel>
+                    Desain File <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="file"
@@ -701,7 +824,10 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Status pemesanan</FormLabel>
+                  <FormLabel>
+                    Status Pemesanan{" "}
+                    <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -731,7 +857,10 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Yang mengerjakan</FormLabel>
+                  <FormLabel>
+                    Yang Mengerjakan{" "}
+                    <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -759,12 +888,127 @@ const FormPage = ({
           <div className="flex flex-col md:justify-between md:flex-row items-start gap-1">
             <FormField
               control={form.control}
+              name="shippingFee"
+              disabled={loading}
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>
+                    Biaya Pengiriman
+                    <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      className="w-full "
+                      placeholder="Biaya pengiriman"
+                      value={form.getValues("shippingFee") ? field.value : ""}
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        form.setValue("shippingFee", Number(e.target.value));
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className=" text-xs text-destructive min-h-[20px]" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="discountAmount"
+              disabled={loading}
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>Diskon </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      className="w-full "
+                      placeholder="Diskon"
+                      value={
+                        form.getValues("discountAmount") !== 0
+                          ? field.value
+                          : ""
+                      }
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        form.setValue("discountAmount", Number(e.target.value));
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className=" text-xs text-destructive min-h-[20px]" />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div>
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              disabled={loading}
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>
+                    Metode pembayaran{" "}
+                    <span className="text-red-600 font-sm">*</span>
+                  </FormLabel>
+                  <Select
+                    disabled={loading}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      const findNoPayment = payments.filter(
+                        (e) => e.name === value
+                      );
+                      if (value.toLowerCase() !== "cash") {
+                        setNoPayments(Number(findNoPayment[0].no));
+                        setNamePayment(findNoPayment[0].name);
+                        form.setValue("noPayment", Number(findNoPayment[0].no));
+                      }
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl className="w-full capitalize">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Metode pembayaran" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {payments.map((e) => (
+                        <SelectItem
+                          key={e.id}
+                          value={e.name}
+                          className="capitalize"
+                        >
+                          {e.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className=" text-xs text-destructive min-h-[20px]" />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="mt-2 sm:mt-4 w-full">
+            {noPayments !== 0 ? (
+              <Card className=" px-4 py-2 rounded-sm text-lg font-medium capitalize">
+                {namePayment} - {noPayments}
+              </Card>
+            ) : (
+              <></>
+            )}
+          </div>
+          <div className="flex flex-col md:justify-between md:flex-row items-start gap-1">
+            <FormField
+              control={form.control}
               name="createdAt"
               disabled={loading}
               render={({ field }) => {
                 return (
                   <FormItem className="w-full">
-                    <FormLabel>Tanggal pemesanan</FormLabel>
+                    <FormLabel>
+                      Tanggal pemesanan{" "}
+                      <span className="text-red-600 font-sm">*</span>
+                    </FormLabel>
                     <DateInput field={field.value} onChange={field.onChange} />
                     <FormMessage />
                   </FormItem>
@@ -778,7 +1022,10 @@ const FormPage = ({
               render={({ field }) => {
                 return (
                   <FormItem className="w-full">
-                    <FormLabel>Tanggal selesai</FormLabel>
+                    <FormLabel>
+                      Tanggal selesai{" "}
+                      <span className="text-red-600 font-sm">*</span>
+                    </FormLabel>
                     <DateInput field={field.value} onChange={field.onChange} />
                     <FormMessage />
                     <FormDescription className="text-sm text-muted-foreground">

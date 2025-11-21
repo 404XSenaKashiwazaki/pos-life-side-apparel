@@ -6,6 +6,9 @@ interface SiteContextType {
   name?: string | null;
   filename?: string | null;
   fileProofUrl?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
   [key: string]: any;
 }
 

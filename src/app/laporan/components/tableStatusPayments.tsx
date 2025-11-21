@@ -35,7 +35,7 @@ const TableStatusPayment = ({ status, data }: TableStatusPaymentProps) => {
   return (
     <div>
       <div>
-        <Link href={"/cetak"}>
+        <Link href={"/cetak-pembayaran"}>
           <Button
             variant="default"
             aria-label="Submit"

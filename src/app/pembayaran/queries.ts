@@ -2,9 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { sendResponse } from "@/lib/response";
-import {
-  ColumnPaymentTypeDefProps,
-} from "@/types/datatable";
+import { ColumnPaymentTypeDefProps } from "@/types/datatable";
 import { Response } from "@/types/response";
 
 export const getPayments = async (): Promise<
@@ -13,8 +11,16 @@ export const getPayments = async (): Promise<
   try {
     const res = await prisma.payment.findMany({
       include: {
+         method: true,
         order: {
-          include: { customer: true, items: true },
+          include: {
+            customer: true,
+            items: {
+              include: {
+                products: true,
+              },
+            },
+          },
         },
       },
     });
@@ -48,8 +54,19 @@ export const getPaymentById = async (
     const res = await prisma.payment.findUnique({
       where: { id },
       include: {
+        method: true,
         order: {
-          include: { customer: true, items: true },
+          include: {
+            customer: true,
+            items: {
+              include: {
+                products: true,
+                production: {
+                  include: { sablonType: true },
+                },
+              },
+            },
+          },
         },
       },
     });

@@ -22,7 +22,8 @@ export const addPayment = async (
     notes: formdata.get("notes"),
     orderId: formdata.get("orderId"),
     paidAt: formdata.get("paidAt"),
-    amount: formdata.get("amount"),
+    amount: JSON.parse(formdata.get("amount") as string),
+    amountReturn: JSON.parse(formdata.get("amountReturn") as string),
     method: formdata.get("method"),
     type: formdata.get("type"),
     status: formdata.get("status"),
@@ -48,18 +49,21 @@ export const addPayment = async (
     fileName = process.env.PREVIEW_IMAGE as string;
     fileUrl = process.env.PREVIEW_IMAGE_URL as string;
   }
+  console.log({ data: data.amount });
+
   try {
     await prisma.payment.create({
       data: {
         amount: data.amount,
         orderId: data.orderId,
-        method: (data.method as PaymentMethod) || PaymentMethod.CASH,
+        methodId: data.method,
         type: (data.type as PaymentType) || PaymentType.DP,
         status: (data.status as PaymentStatus) || PaymentStatus.PAID,
         paidAt: data.paidAt,
         processedBy: currentLogin?.user.id,
         reference: fileUrl,
         filename: fileName,
+        amountReturn: data.amountReturn,
         notes: data.notes,
       },
     });
@@ -94,7 +98,8 @@ export const updatePayment = async (
     notes: formdata.get("notes"),
     orderId: formdata.get("orderId"),
     paidAt: formdata.get("paidAt"),
-    amount: formdata.get("amount"),
+    amount: JSON.parse(formdata.get("amount") as string),
+    amountReturn: JSON.parse(formdata.get("amountReturn") as string),
     method: formdata.get("method"),
     type: formdata.get("type"),
     status: formdata.get("status"),
@@ -146,12 +151,13 @@ export const updatePayment = async (
       data: {
         amount: data.amount,
         orderId: data.orderId,
-        method: (data.method as PaymentMethod) || PaymentMethod.CASH,
+        methodId: data.method,
         type: (data.type as PaymentType) || PaymentType.DP,
         status: (data.status as PaymentStatus) || PaymentStatus.PAID,
         paidAt: data.paidAt,
         reference: fileUrl,
         filename: fileName,
+        amountReturn: data.amountReturn,
         notes: data.notes,
       },
       where: { id },

@@ -1,14 +1,15 @@
 "use server";
 import { auth } from "@/auth";
+import { calculateCostAndProfit } from "@/lib/calculateCostAndProfit";
+import { createSKU } from "@/lib/createSku";
 import { prisma } from "@/lib/prisma";
 import { sendResponse } from "@/lib/response";
 import { getFilePath, removeFile, uploadFile } from "@/lib/uploadFile";
 import { type Response } from "@/types/response";
-import {  formOrderSchema } from "@/types/zod";
-import {  Order, OrderStatus } from "@prisma/client";
+import { formOrderSchema } from "@/types/zod";
+import { Order, OrderStatus } from "@prisma/client";
 import { existsSync } from "fs";
 import { revalidatePath } from "next/cache";
-
 
 export const addOrder = async (
   formdata: FormData
@@ -26,16 +27,20 @@ export const addOrder = async (
     filename: formdata.get("filename"),
     status: formdata.get("status"),
     createdAt: formdata.get("createdAt"),
-    unitPrice: formdata.get("unitPrice"),
-    quantity: formdata.get("quanatity"),
-    totalAmount: formdata.get("totalAmount"),
+    unitPrice: JSON.parse(formdata.get("unitPrice") as string),
+    quantity: JSON.parse(formdata.get("quantity") as string),
+    totalAmount: JSON.parse(formdata.get("totalAmount") as string),
     orderNumber: formdata.get("orderNumber"),
     size: formdata.get("size"),
     productionDue: formdata.get("productionDue"),
     handleById: formdata.get("handleById"),
     sablonTypeId: formdata.get("sablonTypeId"),
-    colorCount: formdata.get("colorCount"),
-    printArea: formdata.get("printArea"),
+    colorCount: JSON.parse(formdata.get("colorCount") as string),
+    printArea: JSON.parse(formdata.get("printArea") as string),
+    shippingFee: JSON.parse(formdata.get("shippingFee") as string),
+    discountAmount: JSON.parse(formdata.get("discountAmount") as string),
+    noPayment: JSON.parse(formdata.get("noPayment") as string),
+    paymentMethod: formdata.get("paymentMethod"),
   };
 
   const parseData = formOrderSchema.safeParse(raw);
@@ -45,7 +50,16 @@ export const addOrder = async (
       message: "Data tidak valid",
       error: parseData.error,
     });
+
   const { data } = parseData;
+  const sablonType = await prisma.sablonType.findUnique({
+    where: {
+      id: data.sablonTypeId,
+    },
+  });
+  const product = await prisma.product.findUnique({
+    where: { id: data.product },
+  });
   const file = formdata.get("filename") as File | null;
   let fileName = "";
   let fileUrl = "";
@@ -58,8 +72,21 @@ export const addOrder = async (
     fileUrl = process.env.PREVIEW_IMAGE_URL as string;
   }
 
+  const costAndProfit = calculateCostAndProfit({
+    colorCount: data.colorCount,
+    printArea: data.printArea,
+    purchaseCost: product?.purchaseCost ?? 0,
+    quantity: data.quantity ?? 1,
+    sabBase: sablonType?.baseCost ?? 0,
+    sabPricePerColor: sablonType?.pricePerColor ?? 0,
+    totalAmount: data.totalAmount,
+    unitPrice: data.unitPrice,
+  });
+
+  console.log({ quantity: data.quantity });
+
   try {
-    await prisma.order.create({
+    const order = await prisma.order.create({
       data: {
         customerId: data.customerId,
         orderNumber: data.orderNumber,
@@ -70,17 +97,23 @@ export const addOrder = async (
         status: (data.status as OrderStatus) || OrderStatus.PENDING,
         productionDue: data.productionDue,
         handledById: data.handleById,
+        paymentMethod: data.paymentMethod,
+        noPayment: data.noPayment,
         items: {
           create: {
             product: data.product,
-            subtotal: data.totalAmount,
+            subtotal: data.unitPrice * (data.quantity ?? 1),
             unitPrice: data.unitPrice,
             color: data.color,
             notes: data.notes,
-            quantity: Number(data.quantity),
+            costPrice: costAndProfit.costPrice,
+            costTotal: costAndProfit.costTotal,
+            printAreas: data.printAreas,
+
+            quantity: data.quantity,
             size: data.size,
             printArea: data.printArea,
-            colorCount: Number(data.colorCount),
+            colorCount: data.colorCount,
             production: {
               create: {
                 assignedToId: data.handleById,
@@ -99,6 +132,29 @@ export const addOrder = async (
             uploadedBy: currentLogin?.user.id,
           },
         },
+      },
+    });
+
+    const orderItems = await prisma.orderItem.findMany({
+      where: { orderId: order.id },
+    });
+
+    const orderSubtotal = orderItems.reduce((sum, i) => sum + i.subtotal, 0);
+    console.log({ orderSubtotal });
+    console.log({ totalAmount: data.totalAmount });
+
+    const finalTotal =
+      orderSubtotal + (data.shippingFee || 0) - (data.discountAmount || 0);
+    console.log({ finalTotal });
+
+    await prisma.order.update({
+      where: {
+        id: order.id,
+      },
+      data: {
+        totalAmount: finalTotal,
+        shippingFee: data.shippingFee || 0,
+        discountAmount: data.discountAmount || 0,
       },
     });
     revalidatePath("/pemesanan");
@@ -142,16 +198,21 @@ export const updateOrder = async (
     filename: formdata.get("filename"),
     status: formdata.get("status"),
     createdAt: formdata.get("createdAt"),
-    unitPrice: formdata.get("unitPrice"),
-    quantity: formdata.get("quantity"),
-    totalAmount: formdata.get("totalAmount"),
+    unitPrice: JSON.parse(formdata.get("unitPrice") as string),
+    quantity: JSON.parse(formdata.get("quantity") as string),
+    totalAmount: JSON.parse(formdata.get("totalAmount") as string),
     orderNumber: formdata.get("orderNumber"),
     size: formdata.get("size"),
     productionDue: formdata.get("productionDue"),
     handleById: formdata.get("handleById"),
     sablonTypeId: formdata.get("sablonTypeId"),
-    colorCount: formdata.get("colorCount"),
-    printArea: formdata.get("printArea"),
+    colorCount: JSON.parse(formdata.get("colorCount") as string),
+    printArea: JSON.parse(formdata.get("printArea") as string),
+    shippingFee: JSON.parse(formdata.get("shippingFee") as string),
+    discountAmount: JSON.parse(formdata.get("discountAmount") as string),
+    noPayment: JSON.parse(formdata.get("noPayment") as string),
+    printAreas: formdata.get("printAreas"),
+    paymentMethod: formdata.get("paymentMethod"),
   };
 
   const parseData = formOrderSchema.safeParse(raw);
@@ -162,21 +223,50 @@ export const updateOrder = async (
       message: "Data tidak valid",
       error: parseData.error,
     });
-
-  const file = formdata.get("filename") as File | null;
-  let fileName = "";
-  let fileUrl = "";
+  const { data } = parseData;
   const dataInDb = await prisma.order.findUnique({
     where: { id },
-    include: { items: true, designs: true },
+    include: {
+      items: {
+        include: {
+          production: true,
+        },
+      },
+      designs: true,
+    },
   });
   if (!dataInDb)
     return sendResponse({
       success: false,
       message: "Mendapatkan data pemesanan",
     });
+
+  const sablonType = await prisma.sablonType.findUnique({
+    where: {
+      id: data.sablonTypeId,
+    },
+  });
+  const product = await prisma.product.findUnique({
+    where: { id: data.product },
+  });
+
+  const file = formdata.get("filename") as File | null;
+  let fileName = "";
+  let fileUrl = "";
+
+  const costAndProfit = calculateCostAndProfit({
+    colorCount: data.colorCount,
+    printArea: data.printArea,
+    purchaseCost: product?.purchaseCost ?? 0,
+    quantity: data.quantity ?? 1,
+    sabBase: sablonType?.baseCost ?? 0,
+    sabPricePerColor: sablonType?.pricePerColor ?? 0,
+    totalAmount: data.totalAmount,
+    unitPrice: data.unitPrice,
+  });
+
   try {
-    const { data } = parseData;
+    // const { data } = parseData;
     if (!file) {
       fileName = dataInDb.designs[0].filename;
       fileUrl = dataInDb.designs[0].fileUrl;
@@ -207,6 +297,8 @@ export const updateOrder = async (
           status: (data.status as OrderStatus) || OrderStatus.PENDING,
           productionDue: data.productionDue,
           handledById: data.handleById,
+          paymentMethod: data.paymentMethod,
+          noPayment: data.noPayment,
           designs: {
             update: {
               where: { id: dataInDb.designs[0].id },
@@ -231,6 +323,9 @@ export const updateOrder = async (
                 size: data.size,
                 printArea: data.printArea,
                 colorCount: Number(data.colorCount),
+                costPrice: costAndProfit.costPrice,
+                costTotal: costAndProfit.costTotal,
+                printAreas: data.printAreas,
                 production: {
                   update: {
                     data: {
@@ -251,6 +346,28 @@ export const updateOrder = async (
         where: { id },
       }),
     ]);
+    const orderItems = await prisma.orderItem.findMany({
+      where: { orderId: dataInDb.items[0].id },
+    });
+
+    const orderSubtotal = orderItems.reduce((sum, i) => sum + i.subtotal, 0);
+    console.log({ orderSubtotal });
+    console.log({ totalAmount: data.totalAmount });
+
+    const finalTotal =
+      orderSubtotal + (data.shippingFee || 0) - (data.discountAmount || 0);
+    console.log({ finalTotal });
+
+    await prisma.order.update({
+      where: {
+        id: dataInDb.id,
+      },
+      data: {
+        totalAmount: finalTotal,
+        shippingFee: data.shippingFee || 0,
+        discountAmount: data.discountAmount || 0,
+      },
+    });
     revalidatePath("/pemesanan");
     return sendResponse({
       success: true,
@@ -293,8 +410,7 @@ export const deleteOrder = async (id: string): Promise<Response<Order>> => {
     if (payments && Array.isArray(payments) && payments.length > 1) {
       payments.forEach(async (e) => {
         if (
-           e.filename !==
-            (process.env.PREVIEW_IMAGE as string) &&
+          e.filename !== (process.env.PREVIEW_IMAGE as string) &&
           existsSync(filePath)
         ) {
           await removeFile(getFilePath(e.reference));

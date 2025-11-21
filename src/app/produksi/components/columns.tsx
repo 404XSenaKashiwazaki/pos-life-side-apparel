@@ -1,22 +1,22 @@
 "use client";
 
 import { ColumnDef, Row } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  Edit2Icon,
-  SearchCheck,
-} from "lucide-react";
+import { ArrowUpDown, Edit2Icon, SearchCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import React  from "react";
+import React from "react";
 import { useModal } from "@/components/providers/Modal-provider";
 import { ColumnProductionTypeDefProps } from "@/types/datatable";
 import FormPage from "./form";
 import DetailPage from "./detail";
-import {  SablonType, User } from "@prisma/client";
+import { SablonType, User } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { IconCreditCardPay } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconCreditCardPay,
+  IconInfoCircle,
+} from "@tabler/icons-react";
 import { useSheet } from "@/components/providers/Sheet-provider";
 import DeleteModal from "./delete";
 
@@ -30,10 +30,14 @@ const CellAction = ({ row, handle, sablon }: CellActionProps) => {
   const { modal, setOpen } = useModal();
   const { sheet } = useSheet();
 
-
   const showModalDelete = () => {
     modal({
-      title: "Apakah kamu benar-benar yakin?",
+      title: (
+        <div className="flex gap-1">
+          <IconAlertCircle className="h-5 w-5" />
+          Apakah Kamu Benar-benar Yakin?
+        </div>
+      ),
       description:
         "Tindakan ini tidak dapat dibatalkan. Tindakan ini akan menghapus produksi Anda secara permanen",
       body: <DeleteModal id={row.original.id} setOpen={setOpen} />,
@@ -71,9 +75,13 @@ const CellAction = ({ row, handle, sablon }: CellActionProps) => {
 
   const showModalDetail = () => {
     modal({
-      title: "Detail data produksi",
+      title: (
+        <div className="flex gap-1">
+          <IconInfoCircle className="h-5 w-5" />
+          Detail Data Produksi
+        </div>
+      ),
       body: <DetailPage id={row.original.id} />,
-      description: "Detail data produksi",
       size: "sm:max-w-2xl",
     });
   };

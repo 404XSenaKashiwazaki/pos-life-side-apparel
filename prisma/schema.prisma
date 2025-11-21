@@ -122,12 +122,13 @@ model Order {
   totalAmount    Int
   shippingFee    Int?         
   discountAmount Int?         
+  paymentMethod   String? 
+  noPayment      Int?
   status         OrderStatus     @default(PENDING)
   productionDue  DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   canceledAt     DateTime?
-
   items          OrderItem[]
   payments       Payment[]
   designs        Design[]
@@ -163,9 +164,11 @@ model OrderItem {
   color      String?
   notes      String?
   printArea  Int?
+  printAreas  String?
   colorCount Int?       @default(1)
   production Production?
   provit ProfitLog[]
+  products  Product @relation(fields: [product], references: [id])
   createdAt  DateTime   @default(now())
 
   @@index([orderId])
@@ -193,7 +196,10 @@ model Payment {
   orderId      String
   order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   amount       Int
-  method       PaymentMethod
+  amountReturn Int?
+  methodId  String
+
+  method       PaymentMethods @relation(fields: [methodId], references: [id])
   type         PaymentType
   status       PaymentStatus @default(PENDING)
   reference    String
@@ -205,6 +211,16 @@ model Payment {
   createdAt    DateTime  @default(now())
 
   @@index([orderId])
+}
+
+model PaymentMethods{
+  id           String    @id @default(cuid())
+  name           String       @unique
+  no BigInt?
+  description    String?
+  createdAt    DateTime  @default(now())
+  updatedAt      DateTime     @updatedAt
+  payments  Payment[]
 }
 
 enum PaymentMethod {
@@ -286,6 +302,9 @@ model Site {
    name String @db.Char(20)
   filename     String? 
   fileProofUrl   String?
+   phone     String?
+  email     String? 
+  address   String? @db.Char(255)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
@@ -302,6 +321,7 @@ model Product {
   sellingPrice Int?
   stok          Int @default(1)
   notes        String?
+  orderItems       OrderItem[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -328,6 +348,15 @@ model Size {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Invoice {
+ id        String      @id @default(cuid())
+  invoiceNumber String   @unique
+  customerName  String
+  amount        Int
+  createdAt     DateTime @default(now())
+}
+
 
 
 enum ProductionStatus {

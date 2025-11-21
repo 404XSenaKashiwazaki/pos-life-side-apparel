@@ -3,7 +3,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Prisma } from "@prisma/client";
+import { PaymentMethods, Prisma } from "@prisma/client";
 import { ColumnPaymentTypeDefProps } from "@/types/datatable";
 const DataTable = dynamic(() => import("./data-table"), {
   loading: () => (
@@ -16,15 +16,24 @@ const DataTable = dynamic(() => import("./data-table"), {
 });
 
 interface TableSectionProps {
+  payments: PaymentMethods[]
   data: ColumnPaymentTypeDefProps[];
   orders: Prisma.OrderGetPayload<{
-    include: { customer: true; items: true; payments: true };
+    include: {
+      customer: true;
+      items: {
+        include: {
+          products: true;
+        };
+      };
+      payments: true;
+    };
   }>[];
 }
-const TableSection: React.FC<TableSectionProps> = ({ data, orders }) => {
+const TableSection: React.FC<TableSectionProps> = ({ data, orders, payments }) => {
   return (
     <div>
-      <DataTable data={data} orders={orders} />
+      <DataTable data={data} orders={orders}  payments={payments}/>
     </div>
   );
 };

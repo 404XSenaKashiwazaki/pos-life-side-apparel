@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2Icon, X } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { deleteUser } from "../actions";
+import { deleteData } from "../actions";
 import { Spinner } from "@/components/ui/spinner";
 
 interface DeleteModalProps {
@@ -14,11 +14,11 @@ interface DeleteModalProps {
 
 const DeleteModal: React.FC<DeleteModalProps> = ({ setOpen, id }) => {
   const [loading, setLoading] = useState(false);
-  const deleteData = async () => {
+  const deleteAction = async () => {
     if (!id) return;
     try {
       setLoading(true);
-      const { success, message, error } = await deleteUser(id);
+      const { success, message, error } = await deleteData(id);
       if (success) {
         setOpen(false);
         toast("Sukses", {
@@ -49,7 +49,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ setOpen, id }) => {
         variant="destructive"
         size={"sm"}
         disabled={loading}
-        onClick={() => deleteData()}
+        onClick={() => deleteAction()}
       >
         {loading ? (
           <div className="flex gap-1 items-center">

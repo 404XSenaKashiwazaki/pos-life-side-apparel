@@ -28,7 +28,7 @@ const TableStatusOrder = ({ status, data }: TableStatusOrderProps) => {
   return (
     <div>
       <div>
-        <Link href={"/cetak"}>
+        <Link href={"/cetak-pemesanan"}>
           <Button
             size={"sm"}
             variant="default"

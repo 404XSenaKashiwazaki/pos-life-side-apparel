@@ -31,24 +31,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { columns } from "./columns";
-
-import { useModal } from "@/components/providers/Modal-provider";
 import FormPage from "./form";
 import { ColumnPaymentTypeDefProps } from "@/types/datatable";
 import { useSheet } from "@/components/providers/Sheet-provider";
 import { IconCreditCardPay } from "@tabler/icons-react";
-import { Prisma } from "@prisma/client";
+import { PaymentMethods, Prisma } from "@prisma/client";
 
 interface DataTableProps {
+  payments: PaymentMethods[];
   data: ColumnPaymentTypeDefProps[];
   orders: Prisma.OrderGetPayload<{
-      include: {customer: true, items: true, payments: true}
-    }>[]
+    include: {
+      customer: true;
+      items: {
+        include: {
+          products: true;
+        };
+      };
+      payments: true;
+    };
+  }>[];
 }
 
-export const DataTable = ({ data, orders }: DataTableProps) => {
+export const DataTable = ({ data, orders, payments }: DataTableProps) => {
   const { sheet } = useSheet();
-  const { modal } = useModal();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
@@ -61,7 +67,7 @@ export const DataTable = ({ data, orders }: DataTableProps) => {
   const [rowSelection, setRowSelection] = React.useState({});
   const table = useReactTable({
     data,
-    columns: columns({orders}),
+    columns: columns({ orders, payments }),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -81,14 +87,16 @@ export const DataTable = ({ data, orders }: DataTableProps) => {
 
   const showModalAdd = () => {
     sheet({
-      title: (<>
+      title: (
+        <>
           <span className="flex  gap-1 ">
             <IconCreditCardPay className="h-5 w-5" />
             Form tambah data pembarayan
           </span>
-        </>),
+        </>
+      ),
       description: "Form tambah data pembayaran",
-      content: <FormPage orders={orders}/>,
+      content: <FormPage orders={orders} payments={payments} />,
       size: "sm:max-w-2xl",
     });
   };
@@ -100,7 +108,11 @@ export const DataTable = ({ data, orders }: DataTableProps) => {
           type="button"
           variant={"default"}
           size={"sm"}
-          disabled={orders.length === 0 ? true : false }
+          disabled={
+            orders.filter((e) => e.payments.length === 0).length === 0
+              ? true
+              : false
+          }
           onClick={() => showModalAdd()}
         >
           <PlusIcon />

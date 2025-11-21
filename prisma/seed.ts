@@ -4,6 +4,9 @@ import { Prisma } from "@prisma/client";
 
 const siteData: Prisma.SiteCreateInput = {
   name: "POS",
+  email:"sgsdgsgd",
+  phone: "pos@gmail.com",
+  address: "Jl.sf s",
   filename: "preview.jpg",
   fileProofUrl: "/preview.jpg",
 };
@@ -216,7 +219,7 @@ const sablonTypeData: Prisma.SablonTypeCreateInput[] = [
 
 const main = async () => {
   // await prisma.site.create({ data: siteData });
-   await prisma.size.createMany({ data: sizeData });
+  //  await prisma.size.createMany({ data: sizeData });
   // await prisma.product.createMany({ data: productData });
   // await prisma.sablonType.createMany({data: sablonTypeData})
 

@@ -22,6 +22,7 @@ import {
   IconUsersGroup,
   IconPackage,
   IconResize,
+  IconCreditCardFilled,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -73,6 +74,12 @@ const data = {
       icon: IconShoppingCart,
       activeUrl: ["/pemesanan"],
     },
+     {
+      title: "Metode Pembayaran",
+      url: "/metode-pembayaran",
+      icon: IconCreditCardFilled,
+      activeUrl: ["/metode-pembayaran"],
+    },
     {
       title: "Pembayaran",
       url: "/pembayaran",
@@ -107,7 +114,7 @@ const data = {
       title: "Laporan",
       url: "/laporan",
       icon: IconChartBar,
-      activeUrl: ["/laporan", "/cetak"],
+      activeUrl: ["/laporan", "/cetak-pemesanan","/cetak-pembayaran"],
     },
 
     {

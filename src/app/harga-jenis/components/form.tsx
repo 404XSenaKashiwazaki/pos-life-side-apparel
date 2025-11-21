@@ -42,11 +42,11 @@ const FormHargaJenis = ({
     defaultValues: {
       name: name ?? "",
       description: description ?? "",
-      basePrice: basePrice ?? 2000,
+      basePrice: basePrice ?? 0,
       pricePerColor: pricePerColor ?? 0,
       pricePerArea: pricePerArea ?? 0,
       notes: notes ?? "",
-      baseCost: baseCost ?? 1000,
+      baseCost: baseCost ?? 0,
       costPerArea: costPerArea ?? 0,
       costPerColor: costPerColor ?? 0,
       isAtive: isActive ?? true,
@@ -97,7 +97,7 @@ const FormHargaJenis = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Nama</FormLabel>
+                  <FormLabel>Nama <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -117,7 +117,7 @@ const FormHargaJenis = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Modal Awal</FormLabel>
+                  <FormLabel>Modal Awal <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -126,7 +126,7 @@ const FormHargaJenis = ({
                       onChange={(e) => {
                         field.onChange(Number(e.target.value));
                       }}
-                      defaultValue={field.value}
+                       defaultValue={field.value === 0 ? "" : field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -150,7 +150,7 @@ const FormHargaJenis = ({
                       onChange={(e) => {
                         field.onChange(Number(e.target.value));
                       }}
-                      defaultValue={field.value}
+                       defaultValue={field.value === 0 ? "" : field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -172,7 +172,7 @@ const FormHargaJenis = ({
                       onChange={(e) => {
                         field.onChange(Number(e.target.value));
                       }}
-                      defaultValue={field.value}
+                      defaultValue={field.value === 0 ? "" : field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -187,7 +187,7 @@ const FormHargaJenis = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Harga Awal</FormLabel>
+                  <FormLabel>Harga Awal <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -197,7 +197,7 @@ const FormHargaJenis = ({
                       onChange={(e) => {
                         field.onChange(Number(e.target.value));
                       }}
-                      defaultValue={field.value}
+                       defaultValue={field.value === 0 ? "" : field.value}
                     />
                   </FormControl>
                   <FormMessage className=" text-xs text-destructive min-h-[20px]" />
@@ -222,7 +222,7 @@ const FormHargaJenis = ({
                       onChange={(e) => {
                         field.onChange(Number(e.target.value));
                       }}
-                      defaultValue={field.value}
+                       defaultValue={field.value === 0 ? "" : field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -244,7 +244,7 @@ const FormHargaJenis = ({
                       onChange={(e) => {
                         field.onChange(Number(e.target.value));
                       }}
-                      defaultValue={field.value}
+                       defaultValue={field.value === 0 ? "" : field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -258,7 +258,7 @@ const FormHargaJenis = ({
             name="description"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Deskripsi </FormLabel>
+                <FormLabel>Deskripsi <span className="text-red-600 font-sm">*</span></FormLabel>
                 <FormControl>
                   <Textarea
                     className="w-full"

@@ -33,15 +33,12 @@ import {
 import { columns } from "./columns";
 
 import { useModal } from "@/components/providers/Modal-provider";
-import { User } from "@prisma/client";
+import { PaymentMethods } from "@prisma/client";
 
-import FormCustomer from "./form"
+import FormCustomer from "./form";
+import { IconPlus } from "@tabler/icons-react";
 
-
-
-export const DataTable = ({
-  data,
-}: { data: User[] }) => {
+export const DataTable = ({ data }: { data: PaymentMethods[] }) => {
   const { modal } = useModal();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -75,30 +72,34 @@ export const DataTable = ({
 
   const showModalAdd = () => {
     modal({
-      title: "Tambah data user",
-      body: <FormCustomer /> ,
+      title: (
+        <div className="flex gap-1">
+          <IconPlus className="h-5 w-5" />
+         Tambah Data Metode Pembayaran
+        </div>
+      ),
+      body: <FormCustomer />,
+      size: "max-w-md"
     });
   };
 
   return (
     <div className="w-full">
       <div>
-        {/* <Button
+        <Button
           type="button"
           variant={"default"}
           size={"sm"}
           onClick={() => showModalAdd()}
         >
           <PlusIcon />
-          Tambah pelanggan
-        </Button> */}
+          Tambah Metode Pembayaran
+        </Button>
       </div>
       <div className="flex items-center py-4">
         <Input
           placeholder="Caroi berdasarkan nama..."
-          value={
-            (table.getColumn("name")?.getFilterValue() as string) ?? ""
-          }
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
           }

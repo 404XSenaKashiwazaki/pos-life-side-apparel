@@ -3,7 +3,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Customer, Product, SablonType, User } from "@prisma/client";
+import { Customer, PaymentMethods, Product, SablonType, User } from "@prisma/client";
 import { ColumnOrderTypeDefProps } from "@/types/datatable";
 const DataTable = dynamic(() => import("./data-table"), {
   loading: () => (
@@ -21,6 +21,7 @@ interface TableSectionProps {
   handles: User[];
   sablons: SablonType[];
   products: Product[];
+  payments : PaymentMethods[]
 }
 const TableSection: React.FC<TableSectionProps> = ({
   data,
@@ -28,6 +29,7 @@ const TableSection: React.FC<TableSectionProps> = ({
   handles,
   sablons,
   products,
+  payments
 }) => {
   return (
     <div>
@@ -37,6 +39,7 @@ const TableSection: React.FC<TableSectionProps> = ({
         sablon={sablons}
         handle={handles}
         customer={customers}
+        payments={payments}
       />
     </div>
   );

@@ -145,7 +145,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Type sablon</FormLabel>
+                  <FormLabel>Type sablon <span className="text-red-600 font-sm">*</span></FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -175,7 +175,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Status pemesanan</FormLabel>
+                  <FormLabel>Status pemesanan <span className="text-red-600 font-sm">*</span></FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -208,7 +208,7 @@ const FormPage = ({
               render={({ field }) => {
                 return (
                   <FormItem className="w-full">
-                    <FormLabel>Tanggal mulai</FormLabel>
+                    <FormLabel>Tanggal mulai <span className="text-red-600 font-sm">*</span></FormLabel>
                     <DateInput field={field.value} onChange={field.onChange} />
                     <FormMessage />
                   </FormItem>
@@ -222,7 +222,7 @@ const FormPage = ({
               render={({ field }) => {
                 return (
                   <FormItem className="w-full">
-                    <FormLabel>Tanggal selesai</FormLabel>
+                    <FormLabel>Tanggal selesai <span className="text-red-600 font-sm">*</span></FormLabel>
                     <DateInput field={field.value} onChange={field.onChange} />
                     <FormMessage />
                     <FormDescription className="text-sm text-muted-foreground">
@@ -240,7 +240,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Yang mengerjakan</FormLabel>
+                  <FormLabel>Yang mengerjakan <span className="text-red-600 font-sm">*</span></FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -270,7 +270,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Progress</FormLabel>
+                  <FormLabel>Progress <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -293,7 +293,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Foto status pengerjaan</FormLabel>
+                  <FormLabel>Foto status pengerjaan <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="file"
@@ -313,7 +313,7 @@ const FormPage = ({
 
             <Card className="rounded-sm w-full">
               <CardHeader>
-                <CardTitle>Preview foto status pengerjaan</CardTitle>
+                <CardTitle>Preview foto status pengerjaan </CardTitle>
                 <CardAction>
                   <Button
                     type="button"

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendResponse } from "@/lib/response";
 import { ColumnOrderTypeDefProps } from "@/types/datatable";
 import { Response } from "@/types/response";
-import { Order, Prisma } from "@/generated/prisma/client";
+import { Order, Prisma } from "@prisma/client";
 
 export const getOrders = async (): Promise<
   Response<ColumnOrderTypeDefProps[]>
@@ -15,6 +15,7 @@ export const getOrders = async (): Promise<
         items: {
           include: {
             production: true,
+            products: true
           },
         },
         customer: true,
@@ -22,7 +23,6 @@ export const getOrders = async (): Promise<
       },
     });
 
-    
     if (!res)
       return sendResponse({
         success: false,
@@ -46,7 +46,18 @@ export const getOrderById = async (
 ): Promise<
   Response<
     Prisma.OrderGetPayload<{
-      include: { customer: true; items: true; designs: true };
+      include: {
+        customer: true;
+        items: {
+          include: {
+            products: true;
+            production: {
+              include: { sablonType: true };
+            };
+          };
+        };
+        designs: true;
+      };
     }>
   >
 > => {
@@ -58,7 +69,18 @@ export const getOrderById = async (
   try {
     const res = await prisma.order.findUnique({
       where: { id },
-      include: { customer: true, items: true, designs: true },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            products: true,
+            production: {
+              include: { sablonType: true },
+            },
+          },
+        },
+        designs: true,
+      },
     });
     if (!res)
       return sendResponse({

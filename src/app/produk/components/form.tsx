@@ -126,7 +126,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Nama</FormLabel>
+                  <FormLabel>Nama <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -145,7 +145,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Warna</FormLabel>
+                  <FormLabel>Warna <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -166,7 +166,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Stok</FormLabel>
+                  <FormLabel>Stok <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -188,7 +188,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Ukuran</FormLabel>
+                  <FormLabel>Ukuran <span className="text-red-600 font-sm">*</span></FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -221,7 +221,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Harga Pembelian</FormLabel>
+                  <FormLabel>Harga Pembelian/Modal <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -243,7 +243,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Harga Jual</FormLabel>
+                  <FormLabel>Harga Jual <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -267,7 +267,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Desain file</FormLabel>
+                  <FormLabel>Desain File <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="file"

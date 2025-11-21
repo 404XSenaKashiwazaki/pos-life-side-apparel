@@ -14,6 +14,9 @@ export default async function middleware(request: NextRequest) {
     "/produksi",
     "/harga-jenis",
     "/laporan",
+    "/cetak-pembayaran",
+    "/cetak-pemesanan",
+    "/metode-pembayaran"
   ];
   const userAuth = await auth();
   const role = userAuth?.user.role;
@@ -25,7 +28,6 @@ export default async function middleware(request: NextRequest) {
   }
   if (userAuth && currentUrl.startsWith("/login"))
     return NextResponse.redirect(new URL("/", request.url));
-
 
   return NextResponse.next();
 }

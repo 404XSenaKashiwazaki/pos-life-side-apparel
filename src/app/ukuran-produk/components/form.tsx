@@ -90,7 +90,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Nama</FormLabel>
+                  <FormLabel>Nama <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -179,7 +179,7 @@ const FormPage = ({
             disabled={loading}
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Catatan</FormLabel>
+                <FormLabel>Catatan </FormLabel>
                 <FormControl>
                   <Textarea
                     className="w-full"

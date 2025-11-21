@@ -82,7 +82,7 @@ const FormCustomer = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Nama</FormLabel>
+                  <FormLabel>Nama <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -101,7 +101,7 @@ const FormCustomer = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>No hp</FormLabel>
+                  <FormLabel>No hp <span className="text-red-600 font-sm">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -121,7 +121,7 @@ const FormCustomer = ({
             disabled={loading}
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Email <span className="text-red-600 font-sm">*</span></FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -140,7 +140,7 @@ const FormCustomer = ({
             disabled={loading}
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Alamat</FormLabel>
+                <FormLabel>Alamat <span className="text-red-600 font-sm">*</span></FormLabel>
                 <FormControl>
                   <Textarea
                     className="w-full"

@@ -30,15 +30,16 @@ import { SaveAllIcon, Trash2Icon, X } from "lucide-react";
 import Image from "next/image";
 import previewImg from "@/public/preview.jpg";
 import { Spinner } from "@/components/ui/spinner";
-import { useSession } from "next-auth/react";
 
 interface FormSiteProps {
   name?: string;
   filename?: string;
   fileUrl?: string;
+  email?:string
+  address?:string
+  phone?:string
 }
-const FormSite: React.FC<FormSiteProps> = ({ name, filename, fileUrl }) => {
-  const { update, data: session } = useSession();
+const FormSite: React.FC<FormSiteProps> = ({ name, filename, fileUrl, address,email,phone }) => {
   const [preview, setPreview] = useState<string | null>(
     fileUrl ?? null
   );
@@ -49,6 +50,9 @@ const FormSite: React.FC<FormSiteProps> = ({ name, filename, fileUrl }) => {
     defaultValues: {
       name: name ?? "",
       filename: filename ?? "",
+      address: address ?? "",
+      email: email?? "",
+      phone: phone ?? ""
     },
   });
   const onSubmit = async (values: z.infer<typeof formSiteSchema>) => {
@@ -65,7 +69,6 @@ const FormSite: React.FC<FormSiteProps> = ({ name, filename, fileUrl }) => {
           closeButton: true,
         });
       }
-      if (data)
         
       if (error) toast.error("Ops...");
     } catch (error) {
@@ -100,6 +103,43 @@ const FormSite: React.FC<FormSiteProps> = ({ name, filename, fileUrl }) => {
               </FormItem>
             )}
           />
+           <FormField
+            control={form.control}
+            name="email"
+            disabled={loading}
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Textarea
+                    className="w-full"
+                    placeholder="Masukan email"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className=" text-xs text-destructive" />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="phone"
+            disabled={loading}
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Telephone</FormLabel>
+                <FormControl>
+                  <Textarea
+                    className="w-full"
+                    placeholder="Masukan nomor telephone"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className=" text-xs text-destructive" />
+              </FormItem>
+            )}
+          />
+          
           <div className="flex flex-col items-start gap-1">
             <FormField
               control={form.control}
@@ -152,6 +192,24 @@ const FormSite: React.FC<FormSiteProps> = ({ name, filename, fileUrl }) => {
               </CardContent>
             </Card>
           </div>
+           <FormField
+            control={form.control}
+            name="address"
+            disabled={loading}
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Alamat</FormLabel>
+                <FormControl>
+                  <Textarea
+                    className="w-full"
+                    placeholder="Masukan alamat"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className=" text-xs text-destructive" />
+              </FormItem>
+            )}
+          />
           <div className="flex justify-end gap-2 mt-5">
             <Button
               type="button"

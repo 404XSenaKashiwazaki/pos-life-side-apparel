@@ -2,6 +2,7 @@ import {
   Customer,
   Order,
   OrderItem,
+  PaymentMethods,
   Prisma,
   Product,
   SablonType,
@@ -12,6 +13,10 @@ import {
 export type ColumnPelangganDefProps = Omit<Customer, "updatedAt">;
 
 export type ColumnUserDefProps = Omit<User, "updatedAt" | "password">;
+export type ColumnPaymentMethodsDefProps = Omit<
+  PaymentMethods,
+  "updatedAt" | "password"
+>;
 
 export type ColumnProductsDefProps = Product;
 
@@ -25,6 +30,7 @@ export type ColumnOrderTypeDefProps = Omit<
       items: {
         include: {
           production: true;
+          products: true;
         };
       };
       designs: true;
@@ -33,11 +39,39 @@ export type ColumnOrderTypeDefProps = Omit<
   "updatedAt"
 >;
 
+export type PrintOrders = Prisma.OrderGetPayload<{
+  include: {
+    customer: true;
+    items: {
+      include: {
+        products: true;
+        production: {
+          include: { sablonType: true };
+        };
+      };
+    };
+    designs: true;
+  };
+}>;
+
 export type ColumnPaymentTypeDefProps = Omit<
   Prisma.PaymentGetPayload<{
     include: {
+      method: true;
       order: {
-        include: { customer: true; items: true };
+        include: {
+          customer: true;
+          items: {
+            include: {
+              products: true;
+              production: {
+                include: {
+                  sablonType: true;
+                };
+              };
+            };
+          };
+        };
       };
     };
   }>,
@@ -47,7 +81,16 @@ export type ColumnPaymentTypeDefProps = Omit<
 export type ColumnProductionTypeDefProps = Omit<
   Prisma.ProductionGetPayload<{
     include: {
-      orderItem: true;
+      orderItem: {
+        include: {
+          products: true;
+          order: {
+            include: {
+              designs: true;
+            };
+          };
+        };
+      };
       assignedTo: true;
       sablonType: true;
     };

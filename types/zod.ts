@@ -2,14 +2,21 @@ import { OrderStatus, PaymentStatus, ProductionStatus } from "@prisma/client";
 import * as z from "zod";
 
 export const formCustomerSchema = z.object({
-  name: z.string().min(1, { message: "Nama wajib di isi." }),
+  name: z.string().min(1, "Nama wajib di isi." ),
   phone: z
     .string()
-    .min(11, { message: "Nama wajib di isi dan minimal 11 karakter" })
+    .min(11, { message: "No hp di isi dan minimal 11 karakter" })
     .max(12, { message: "No hp maksimal 12 karakter." }),
   email: z.email({ error: "Email tidak valid." }).min(1, "Email wajib di isi."),
   address: z.string().min(1, { message: "Alamat wajib di isi." }),
   notes: z.string().optional(),
+});
+
+export const formPaymentMethodsSchema = z.object({
+  name: z.string().min(1, "Nama wajib di isi"),
+  no: z
+    .number().optional(),
+  description: z.string().optional(),
 });
 
 export const formHargaJenisSchema = z.object({
@@ -58,7 +65,12 @@ export const formOrderSchema = z.object({
     .number()
     .min(1, "Harga per unit wajib di isi.")
     .max(99999999999, "Harga per unit maksimal 11 digit."),
-  quantity: z.number().min(1, "Jumlah wajib di isi."),
+  quantity: z.number().min(1, "Jumlah wajib di isi.").optional(),
+  paymentMethod: z.string().min(1, "Metode Pembayaran wajib di isi."),
+  noPayment:  z
+    .number()
+    .min(1, "Nomor pembayaran wajib di isi.")
+    .max(99999999999, "Nomor pembayaran maksimal 11 digit.").optional(),
   totalAmount: z
     .number()
     .min(1, "Sub total wajib di isi.")
@@ -67,7 +79,16 @@ export const formOrderSchema = z.object({
   status: z.string().min(1, "Status pemesanan wajib di isi."),
   size: z.string().min(1, "Ukuran wajib di isi."),
   // tb design
-  filename: z.union([z.file(), z.string()]).optional(),
+  filename: z.union([z.instanceof(File), z.string()]).refine(
+    (val) => {
+      if (val instanceof File) return val.size > 0;
+      if (typeof val === "string") return val.trim().length > 0;
+      return false;
+    },
+    {
+      message: "Desain file wajib diisi.",
+    }
+  ),
   previewUrl: z.string().optional(),
   productionDue: z.union([z.string(), z.date()]),
   //
@@ -88,6 +109,15 @@ export const formOrderSchema = z.object({
     .number()
     .min(1, "Area sablon wajib di isi.")
     .max(99999999999, "Area sabblon maksimal 11 digit."),
+  shippingFee: z
+    .number()
+    .min(1, "Biaya pengiriman wajib di isi.")
+    .max(99999999999, "Biaya pengiriman maksimal 11 digit."),
+  discountAmount: z
+    .number()
+    .max(99999999999, "Diskon maksimal 11 digit.")
+    .optional(),
+  printAreas: z.string().max(191).optional(),
 });
 
 export const formPaymentSchema = z.object({
@@ -109,6 +139,10 @@ export const formPaymentSchema = z.object({
       message: "Bukti pembayaran wajib diisi.",
     }
   ),
+  amountReturn: z
+    .number()
+    .max(99999999999, "Kembalian maksimal 11 digit.")
+    .optional(),
   paidAt: z
     .union([z.string(), z.date(), z.undefined()])
     .default(new Date())
@@ -191,6 +225,18 @@ export const formSiteSchema = z.object({
     .min(1, "Nama aplikasi wajib di isi.")
     .max(20, "Nama aplikasi maksimal 20 karakter"),
   filename: z.union([z.file(), z.string()]).optional(),
+  phone: z
+    .string()
+    .min(11, { message: "Nama wajib di isi dan minimal 11 karakter" })
+    .max(12, { message: "No hp maksimal 12 karakter." }),
+  email: z
+    .email({ error: "Email tidak valid." })
+    .min(1, "Email wajib di isi.")
+    .max(100, "Email maksimal 100 karakter"),
+  address: z
+    .string()
+    .min(1, { message: "Alamat wajib di isi." })
+    .max(255, "Alamat maksimal 255 karakter"),
 });
 
 export const formProductSchema = z.object({

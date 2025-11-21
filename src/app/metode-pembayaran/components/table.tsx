@@ -3,7 +3,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User } from "@prisma/client";
+import { PaymentMethods, User } from "@prisma/client";
 const DataTable = dynamic(() => import("./data-table"), {
   loading: () => (
     <div>
@@ -15,7 +15,7 @@ const DataTable = dynamic(() => import("./data-table"), {
 });
 
 interface TableSectionProps {
-  data: User[];
+  data: PaymentMethods[];
 }
 const TableSection: React.FC<TableSectionProps> = ({ data }) => {
   return (

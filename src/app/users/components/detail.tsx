@@ -44,10 +44,6 @@ if(isPending) return <Skeleton className="w-full h-52"/>
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <span className="flex items-center gap-1 text-muted-foreground font-medium">
-          <IconUserCircle className="h-4 w-4" />
-          Data User
-        </span>
         <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
           <span className="flex items-center gap-1 text-muted-foreground  w-full">
           Nama

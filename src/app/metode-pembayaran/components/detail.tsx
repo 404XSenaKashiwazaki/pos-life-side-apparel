@@ -17,8 +17,8 @@ import React, { useEffect, useState, useTransition } from "react";
 
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { Customer, User } from "@prisma/client";
-import { getUsersById } from "../queries";
+import { Customer, PaymentMethods, User } from "@prisma/client";
+import { getPaymentMethodsById } from "../queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -28,11 +28,11 @@ interface DetailPembelianProps {
 
 const DetailPage = ({ id }: DetailPembelianProps) => {
   const [isPending, startTransition] = useTransition();
-  const [data, setData] = useState<User | null>(null);
+  const [data, setData] = useState<PaymentMethods | null>(null);
   useEffect(() => {
     startTransition(async () => {
       if (id) {
-        const { data } = await getUsersById(id);
+        const { data } = await getPaymentMethodsById(id);
         setData(data ?? null);
       }
     });
@@ -44,27 +44,23 @@ if(isPending) return <Skeleton className="w-full h-52"/>
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <span className="flex items-center gap-1 text-muted-foreground font-medium">
-          <IconUserCircle className="h-4 w-4" />
-          Data User
-        </span>
         <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
           <span className="flex items-center gap-1 text-muted-foreground  w-full">
           Nama
           </span>
-          <span className="font-xs text-primary  w-full  flex items-start gap-1"><p>:</p><p>{data.name ?? "-"}</p></span>
+          <span className="font-xs text-primary  w-full  flex items-start gap-1"><p>:</p><p className="capitalize">{data.name ?? "-"}</p></span>
         </div>
          <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
           <span className="flex items-center gap-1 text-muted-foreground  w-full">
            Email
           </span>
-          <span className="font-xs text-primary  w-full  flex items-start gap-1"><p>:</p><p>{data.email ?? "-"}</p></span>
+          <span className="font-xs text-primary  w-full  flex items-start gap-1"><p>:</p><p>{data.no ?? "-"}</p></span>
         </div>
          <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
           <span className="flex items-center gap-1 text-muted-foreground  w-full">
-           LEVEL
+           Deskripsi
           </span>
-          <span className="font-xs text-primary  w-full  flex items-start gap-1"><p>:</p><p><Badge className="size-4 capitalize"  variant={"default"}>{data.role}</Badge></p></span>
+          <span className="font-xs text-primary  w-full  flex items-start gap-1"><p>:</p><p>{data.description ?? "-"}</p></span>
         </div>
       </div>
     </div>

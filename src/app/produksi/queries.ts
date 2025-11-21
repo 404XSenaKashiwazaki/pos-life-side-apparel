@@ -11,7 +11,16 @@ export const getProductions = async (): Promise<
   try {
     const res = await prisma.production.findMany({
       include: {
-        orderItem: true,
+        orderItem: {
+          include: {
+            products: true,
+            order: {
+              include: {
+                designs: true,
+              },
+            },
+          },
+        },
         assignedTo: true,
         sablonType: true,
       },
@@ -46,7 +55,16 @@ export const getProductionById = async (
     const res = await prisma.production.findUnique({
       where: { id },
       include: {
-        orderItem: true,
+        orderItem: {
+          include: {
+            products: true,
+            order: {
+              include: {
+                designs: true,
+              },
+            },
+          },
+        },
         assignedTo: true,
         sablonType: true,
       },
@@ -68,3 +86,5 @@ export const getProductionById = async (
     });
   }
 };
+
+

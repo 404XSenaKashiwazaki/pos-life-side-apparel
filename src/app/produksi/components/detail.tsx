@@ -1,30 +1,16 @@
 "use client";
-import { Calendar, DollarSign, PhoneCall, Tag, User2Icon } from "lucide-react";
-import {
-  IconAddressBook,
-  IconBuilding,
-  IconBuildingStore,
-  IconCalendar,
-  IconMail,
-  IconNotebook,
-  IconPackage,
-  IconPencil,
-  IconPhone,
-  IconProgress,
-  IconUserCircle,
-} from "@tabler/icons-react";
+
 import React, { useEffect, useState, useTransition } from "react";
 
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { Customer, Order } from "@prisma/client";
 import { getProductionById } from "../queries";
-import {
-  ColumnPaymentTypeDefProps,
-  ColumnProductionTypeDefProps,
-} from "@/types/datatable";
+import { ColumnProductionTypeDefProps } from "@/types/datatable";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { Size } from "@prisma/client";
+import { getDataByName } from "@/app/ukuran-produk/queries";
 
 interface DetailPageProps {
   id: string | null;
@@ -32,12 +18,18 @@ interface DetailPageProps {
 
 const DetailPage = ({ id }: DetailPageProps) => {
   const [isPending, startTransition] = useTransition();
+
   const [data, setData] = useState<ColumnProductionTypeDefProps | null>(null);
+  const [size, setSize] = useState<Size | null>(null);
   useEffect(() => {
     startTransition(async () => {
       if (id) {
         const { data } = await getProductionById(id);
         setData(data ?? null);
+        const { data: sizes } = await getDataByName(
+          data?.orderItem.products.size ?? ""
+        );
+        if (sizes) setSize(sizes);
       }
     });
   }, []);
@@ -93,9 +85,9 @@ const DetailPage = ({ id }: DetailPageProps) => {
           <span className="font-xs text-primary  w-full  flex items-start gap-1">
             <p>:</p>
             <p>
-              <Badge variant={"default"} className="w-4">
+              <Button variant={"default"} size={"sm"}>
                 {data.status}
-              </Badge>
+              </Button>
             </p>
           </span>
         </div>
@@ -107,6 +99,105 @@ const DetailPage = ({ id }: DetailPageProps) => {
             <p>:</p>
             <p>{data.notes ?? "-"}</p>
           </span>
+        </div>
+
+        {/*  */}
+        <div className="flex flex-col  gap-2 items-center text-sm my-3 sm:my-5">
+          <div className="w-full">
+            <Image
+              src={data.orderItem.products.fileUrl ?? ""}
+              alt={data.orderItem.products.fileName ?? ""}
+              width={100}
+              height={100}
+              className="w-full h-full rounded-md"
+            />
+          </div>
+          <div className="w-full flex flex-col gap-1 ">
+            <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+              <span className="flex items-center gap-1 text-muted-foreground  w-full">
+                Produk
+              </span>
+              <span className="font-xs text-primary  w-full  flex items-start gap-1">
+                <p>:</p>
+                <p>{data.orderItem.products.name ?? "-"}</p>
+              </span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+              <span className="flex items-center gap-1 text-muted-foreground  w-full">
+                Tipe Sablon
+              </span>
+              <span className="font-xs text-primary  w-full  flex items-start gap-1">
+                <p>:</p>
+                <p>{`${data.sablonType?.name} `}</p>
+              </span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+              <span className="flex items-center gap-1 text-muted-foreground  w-full">
+                Warna
+              </span>
+              <span className="font-xs text-primary  w-full  flex items-start gap-1">
+                <p>:</p>
+                <p>{data.orderItem.products.color ?? "-"}</p>
+              </span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+              <span className="flex items-center gap-1 text-muted-foreground  w-full">
+                Ukuran
+              </span>
+              <span className="font-xs text-primary  w-full  flex items-start gap-1">
+                <p>:</p>
+                <p>{data.orderItem.products.size ?? "-"}</p>
+              </span>
+            </div>
+            
+          
+           <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+            <span className="flex items-center gap-1 text-muted-foreground  w-full">
+              Area Cetak
+            </span>
+            <span className="font-xs text-primary  w-full  flex items-start gap-1">
+              <p>:</p>
+              <p>{data.orderItem.printAreas}</p>
+            </span>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+            <span className="flex items-center gap-1 text-muted-foreground  w-full">
+              Color Count
+            </span>
+            <span className="font-xs text-primary  w-full  flex items-start gap-1">
+              <p>:</p>
+              <p>{data.orderItem.colorCount}</p>
+            </span>
+          </div>
+
+            <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+              <span className="flex items-center gap-1 text-muted-foreground  w-full">
+                Lebar Dada (cm)
+              </span>
+              <span className="font-xs text-primary  w-full  flex items-start gap-1">
+                <p>:</p>
+                <p>{size?.chest ?? "-"} cm</p>
+              </span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+              <span className="flex items-center gap-1 text-muted-foreground  w-full">
+                Panjang Lengan (cm)
+              </span>
+              <span className="font-xs text-primary  w-full  flex items-start gap-1">
+                <p>:</p>
+                <p>{size?.sleeve ?? "-"} cm</p>
+              </span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
+              <span className="flex items-center gap-1 text-muted-foreground  w-full">
+                Panjang Badan (cm)
+              </span>
+              <span className="font-xs text-primary  w-full  flex items-start gap-1">
+                <p>:</p>
+                <p>{size?.length ?? "-"} cm</p>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

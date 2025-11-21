@@ -1,23 +1,28 @@
 "use client";
 
 import { ColumnDef, Row } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  Edit2Icon,
-  SearchCheck,
-  Trash2Icon,
-} from "lucide-react";
+import { ArrowUpDown, Edit2Icon, SearchCheck, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
 import { useModal } from "@/components/providers/Modal-provider";
 import { ColumnOrderTypeDefProps } from "@/types/datatable";
 import FormPage from "./form";
 import DetailPage from "./detail";
-import { Customer, Product, SablonType, User } from "@prisma/client";
+import {
+  Customer,
+  PaymentMethods,
+  Product,
+  SablonType,
+  User,
+} from "@prisma/client";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useSheet } from "@/components/providers/Sheet-provider";
-import { IconShoppingCartPlus } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconInfoCircle,
+  IconShoppingCartPlus,
+} from "@tabler/icons-react";
 import DeleteModal from "./delete";
 
 interface CellActionProps {
@@ -25,18 +30,31 @@ interface CellActionProps {
   customer: Customer[];
   handle: User[];
   sablon: SablonType[];
-  products: Product[]
+  products: Product[];
+  payments: PaymentMethods[];
 }
-const CellAction = ({ row, customer, handle, sablon,  products }: CellActionProps) => {
+const CellAction = ({
+  row,
+  customer,
+  handle,
+  sablon,
+  products,
+  payments,
+}: CellActionProps) => {
   const { modal, setOpen } = useModal();
   const { sheet } = useSheet();
 
   const showModalDelete = () => {
     modal({
-      title: "Apakah kamu benar-benar yakin?",
+      title: (
+        <div className="flex gap-1">
+          <IconAlertCircle className="h-5 w-5" />
+          Apakah Kamu Benar-benar Yakin?
+        </div>
+      ),
       description:
         "Tindakan ini tidak dapat dibatalkan. Tindakan ini akan menghapus pemesanan Anda secara permanen",
-      body: <DeleteModal  id={row.original.id} setOpen={setOpen} />,
+      body: <DeleteModal id={row.original.id} setOpen={setOpen} />,
     });
   };
 
@@ -51,9 +69,11 @@ const CellAction = ({ row, customer, handle, sablon,  products }: CellActionProp
       description: "form untuk edit data pemesanan ",
       content: (
         <FormPage
-        products={products}
+          products={products}
+          payments={payments}
           colorCount={row.original.items[0].colorCount ?? 0}
           handleById={row.original.handledById ?? ""}
+          printAreas={row.original.items[0].printAreas ?? ""}
           printArea={row.original.items[0].printArea ?? 0}
           sablonTypeId={row.original.items[0].production?.sablonTypeId ?? ""}
           sablon={sablon}
@@ -75,9 +95,11 @@ const CellAction = ({ row, customer, handle, sablon,  products }: CellActionProp
           quantity={row.original.items[0].quantity ?? 1}
           size={row.original.items[0].size ?? ""}
           status={row.original.status}
-          totalAmount={row.original.totalAmount}
+          totalAmount={row.original.items[0].subtotal}
           unitPrice={row.original.items[0].unitPrice}
           product={row.original.items[0].product}
+          shippingFee={row.original.shippingFee ?? 0}
+          discountAmount={row.original.discountAmount ?? 0}
         />
       ),
       size: "sm:max-w-2xl",
@@ -86,7 +108,12 @@ const CellAction = ({ row, customer, handle, sablon,  products }: CellActionProp
 
   const showModalDetail = () => {
     modal({
-      title: "Detail pemesanan",
+      title: (
+        <div className="flex gap-1">
+          <IconInfoCircle className="h-5 w-5" />
+          Detail Data Pemesanan
+        </div>
+      ),
       body: <DetailPage id={row.original.id} />,
       description: "Detail data pemesanan ",
       size: "sm:max-w-2xl",
@@ -119,12 +146,14 @@ export const columns = ({
   customer,
   handle,
   sablon,
-  products
+  products,
+  payments,
 }: {
   customer: Customer[];
   handle: User[];
   sablon: SablonType[];
-  products: Product[]
+  products: Product[];
+  payments: PaymentMethods[];
 }): ColumnDef<ColumnOrderTypeDefProps>[] => [
   {
     id: "select",
@@ -148,7 +177,8 @@ export const columns = ({
 
   {
     accessorKey: "product",
-    accessorFn: (row: ColumnOrderTypeDefProps) => row.items[0].product ?? "",
+    accessorFn: (row: ColumnOrderTypeDefProps) =>
+      row.items[0].products.name ?? "",
     cell: (info) => info.getValue(),
     header: ({ column }) => {
       return (
@@ -227,6 +257,7 @@ export const columns = ({
         customer={customer}
         sablon={sablon}
         handle={handle}
+        payments={payments}
       />
     ),
   },

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendResponse } from "@/lib/response";
 import { type Response } from "@/types/response";
 import { formCustomerSchema } from "@/types/zod";
-import { Customer, User } from "@/generated/prisma/client";
+import { Customer, User } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export const addUser = async (
@@ -80,19 +80,19 @@ export const deleteUser = async (id: string): Promise<Response<User>> => {
     if (!userInDb)
       return sendResponse({
         success: false,
-        message: "Gagal mendapatkan data user",
+        message: "Mendapatkan data pelanggan",
       });
     await prisma.user.delete({ where: { id } });
     return sendResponse({
       success: true,
-      message: "Berhasil menghapus data user",
+      message: "Menghapus data pelanggan",
     });
   } catch (error) {
     console.log({ error });
 
     return sendResponse({
       success: false,
-      message: "Gagal menghapus data user",
+      message: "Menghapus data pelanggan",
     });
   }
 };

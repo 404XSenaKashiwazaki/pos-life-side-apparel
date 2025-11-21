@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -15,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/components/providers/Modal-provider";
 import { SaveAllIcon, X } from "lucide-react";
-import { formCustomerSchema } from "@/types/zod";
+import { formPaymentMethodsSchema } from "@/types/zod";
 import { toast } from "sonner";
 import {
   Select,
@@ -25,38 +26,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FormCustomerValue } from "@/types/form";
-import { addUser, updateUser } from "../actions";
+import { storeData, updateData } from "../actions";
 import { Textarea } from "@/components/ui/textarea";
 
 const FormPage = ({
   id,
+  description,
   name,
-  email,
-  phone,
-  address,
-  notes,
-}: Partial<FormCustomerValue>) => {
+  no,
+}: Partial<z.infer<typeof formPaymentMethodsSchema>> & { id?: string }) => {
   const [loading, setLoading] = useState(false);
   const { setOpen } = useModal();
-  const form = useForm<z.infer<typeof formCustomerSchema>>({
-    resolver: zodResolver(formCustomerSchema),
+  const form = useForm<z.infer<typeof formPaymentMethodsSchema>>({
+    resolver: zodResolver(formPaymentMethodsSchema),
     defaultValues: {
       name: name ?? "",
-      phone: phone ?? "",
-      email: email ?? "",
-      address: address ?? "",
-      notes: notes ?? "",
+      no: no ?? 0,
+      description: description ?? "",
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formCustomerSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formPaymentMethodsSchema>) => {
     const formData = new FormData();
-    Object.entries(values).forEach(([key, val]) => formData.append(key, val));
+    formData.append("name", values.name);
+    formData.append("no", JSON.stringify(values.no));
+    formData.append("description", values.description ?? "");
     try {
       setLoading(true);
-      const { success, message } = id
-        ? await updateUser(id, formData)
-        : await addUser(formData);
+      const { success, message, error } = id
+        ? await updateData(id, formData)
+        : await storeData(formData);
       if (success) {
         setOpen(false);
         toast("Sukses", {
@@ -66,64 +65,31 @@ const FormPage = ({
         });
         setLoading(false);
       }
+      if (error) toast.error("Ops...");
     } catch (error) {
+      toast.error("Ops...");
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full p-3">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="flex justify-between items-center gap-1">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem className="w-full">
-                  <FormLabel>Nama</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="text"
-                      className="w-full "
-                      placeholder="Masukan nama"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className=" text-xs text-destructive" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem className="w-full">
-                  <FormLabel>No hp</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="text"
-                      className="w-full"
-                      placeholder="Masukan no hp"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className=" text-xs text-destructive" />
-                </FormItem>
-              )}
-            />
-          </div>
           <FormField
             control={form.control}
-            name="email"
+            name="name"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Email</FormLabel>
+                <FormLabel>
+                  Nama <span className="text-red-600 font-sm">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input
-                    type="email"
-                    className="w-full"
-                    placeholder="Masukan email"
+                    type="text"
+                    className="w-full "
+                    placeholder="Masukan nama"
                     {...field}
                   />
                 </FormControl>
@@ -133,31 +99,40 @@ const FormPage = ({
           />
           <FormField
             control={form.control}
-            name="address"
+            name="no"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Alamat</FormLabel>
+                <FormLabel>Nomor</FormLabel>
                 <FormControl>
-                  <Textarea
+                  <Input
+                    type="number"
                     className="w-full"
-                    placeholder="Masukan alamat"
-                    {...field}
+                    placeholder="Masukan nomor"
+                    onChange={(e) => {
+                      field.onChange(Number(e.target.value));
+                    }}
+                    defaultValue={field.value === 0 ? "" : field.value}
                   />
                 </FormControl>
                 <FormMessage className=" text-xs text-destructive" />
+                <FormDescription>
+                  Nomor rekening / e-wallet wajib diisi untuk metode pembayaran
+                  non-cash.
+                </FormDescription>
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
-            name="notes"
+            name="description"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Catatan</FormLabel>
+                <FormLabel>Deskripsi</FormLabel>
                 <FormControl>
                   <Textarea
                     className="w-full"
-                    placeholder="Masukan catatan"
+                    placeholder="Masukan deskripsi"
                     {...field}
                   />
                 </FormControl>
@@ -165,6 +140,7 @@ const FormPage = ({
               </FormItem>
             )}
           />
+
           <div className="flex justify-end gap-2 mt-5">
             <Button
               type="button"

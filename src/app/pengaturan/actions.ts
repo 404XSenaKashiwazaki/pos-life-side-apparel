@@ -31,8 +31,10 @@ export const storeSite = async (
   const dataInDb = await prisma.site.findFirst();
   if (!file || typeof file === "string") {
     fileName = dataInDb?.filename ?? (process.env.PREVIEW_IMAGE as string);
-    fileUrl = dataInDb?.fileProofUrl ?? String(dataInDb?.filename) ?? (process.env.PREVIEW_IMAGE_URL as string)
-      
+    fileUrl =
+      dataInDb?.fileProofUrl ??
+      String(dataInDb?.filename) ??
+      (process.env.PREVIEW_IMAGE_URL as string);
   } else {
     if (file instanceof File) {
       const filePath = getFilePath(dataInDb?.fileProofUrl ?? "");
@@ -51,9 +53,12 @@ export const storeSite = async (
       fileName = dataInDb?.filename ?? (process.env.PREVIEW_IMAGE as string);
       // fileUrl =
       //   dataInDb?.fileProofUrl ?? data.filename
-          // ? (process.env.PREVIEW_IMAGE_URL as string)
+      // ? (process.env.PREVIEW_IMAGE_URL as string)
       //     : (process.env.PREVIEW_IMAGE_URL as string);
-     fileUrl = dataInDb?.fileProofUrl ?? String(dataInDb?.filename) ?? (process.env.PREVIEW_IMAGE_URL as string)
+      fileUrl =
+        dataInDb?.fileProofUrl ??
+        String(dataInDb?.filename) ??
+        (process.env.PREVIEW_IMAGE_URL as string);
     }
   }
   try {
@@ -61,6 +66,9 @@ export const storeSite = async (
       ? await prisma.site.update({
           data: {
             name: data.name,
+            address: data.address,
+            email: data.email,
+            phone: data.phone,
             filename: fileName,
             fileProofUrl: fileUrl,
           },
