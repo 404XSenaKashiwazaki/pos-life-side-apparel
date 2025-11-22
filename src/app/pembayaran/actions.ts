@@ -49,7 +49,6 @@ export const addPayment = async (
     fileName = process.env.PREVIEW_IMAGE as string;
     fileUrl = process.env.PREVIEW_IMAGE_URL as string;
   }
-  console.log({ data: data.amount });
 
   try {
     await prisma.payment.create({
@@ -65,6 +64,18 @@ export const addPayment = async (
         filename: fileName,
         amountReturn: data.amountReturn,
         notes: data.notes,
+      },
+    });
+
+    await prisma.order.update({
+      data: {
+        status:
+          (data.status as PaymentStatus) === "PAID"
+            ? "CONFIRMED"
+            : "PROCESSING",
+      },
+      where: {
+        id: data.orderId,
       },
     });
     revalidatePath("/pembayaran");
@@ -117,7 +128,7 @@ export const updatePayment = async (
   const file = formdata.get("reference") as File | null;
   let fileName = "";
   let fileUrl = "";
-  let filePreview = "";
+
   const dataInDb = await prisma.payment.findUnique({ where: { id } });
   if (!dataInDb)
     return sendResponse({
@@ -161,6 +172,17 @@ export const updatePayment = async (
         notes: data.notes,
       },
       where: { id },
+    });
+    await prisma.order.update({
+      data: {
+        status:
+          (data.status as PaymentStatus) === "PAID"
+            ? "CONFIRMED"
+            : "PROCESSING",
+      },
+      where: {
+        id: data.orderId,
+      },
     });
     revalidatePath("/pembayaran");
     return sendResponse({

@@ -57,6 +57,7 @@ interface FormOrderProps {
   id?: string | null;
   products: Product[];
   payments: PaymentMethods[];
+  stokInDb?: number | null;
 }
 
 type AreaSablons = {
@@ -114,15 +115,14 @@ const FormPage = ({
   paymentMethod,
   noPayment,
   payments,
+  stokInDb,
 }: Partial<z.infer<typeof formOrderSchema>> & FormOrderProps) => {
-  console.log({ quantity });
-
   const [preview, setPreview] = useState<string | null>(previewUrl ?? null);
   const [orderNumberValue, setOrderNumberValue] = useState<string | null>(
     orderNumber ?? ""
   );
-  const [total, setTotal] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [stok, setStok] = useState<number>(stokInDb ?? 0);
+  const [loading, setLoading] = useState<boolean>(false);
   const { setOpen } = useSheet();
   const [noPayments, setNoPayments] = useState<number>(
     id && noPayment ? noPayment : 0
@@ -154,7 +154,7 @@ const FormPage = ({
       email: email ?? "",
       product: product ?? "",
       color: color ?? "",
-      filename: "",
+      filename: filename ?? "",
       status: status ?? "PENDING",
       notes: notes ?? "",
       createdAt: createdAt
@@ -173,12 +173,12 @@ const FormPage = ({
       shippingFee: shippingFee ?? 0,
       paymentMethod: paymentMethod ?? "",
       noPayment: noPayment ?? 0,
+      printAreas: printAreas ?? "",
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formOrderSchema>) => {
     const formData = new FormData();
-
     formData.append("notes", values.notes ?? "");
     formData.append("customerId", values.customerId);
     formData.append("product", values.product);
@@ -211,6 +211,7 @@ const FormPage = ({
     formData.append("discountAmount", JSON.stringify(values.discountAmount));
     formData.append("paymentMethod", values.paymentMethod);
     formData.append("noPayment", JSON.stringify(values.noPayment));
+
     try {
       setLoading(true);
       const { success, message, error } = id
@@ -225,12 +226,9 @@ const FormPage = ({
         });
       }
       if (error) {
-        console.log({ error });
         toast.error("Ops...");
       }
     } catch (error) {
-      console.log({ error });
-
       toast.error("Ops...");
     } finally {
       setLoading(false);
@@ -247,60 +245,44 @@ const FormPage = ({
     form.setValue("orderNumber", res);
   };
 
-  //  useEffect(() => {
-  //   if (id && unitPrice) {
-  //     setProductBasePrice(unitPrice);
-  //   }
-  // }, [id, unitPrice]);
-
   const findCustomer = (id: string) =>
     customer.find((e) => String(e.id) === id);
+
+  useEffect(() => {
+    const selected = products.find((e) => e.id === form.getValues("product"));
+    if (selected) {
+      const price = Number(selected.sellingPrice ?? 0);
+      setProductBasePrice(price);
+    }
+  }, [products]);
+
+  const sablonWatch = form.watch("sablonTypeId");
+  const colorCountWatch = form.watch("colorCount");
+  const printAreaWatch = form.watch("printArea");
+  const qtyWatch = form.watch("quantity");
+
   // Hitung otomatis unitPrice & totalAmount
   useEffect(() => {
-    const sablonId = form.getValues("sablonTypeId");
-    const sab = sablon.find((e) => e.id === sablonId);
+    const sab = sablon.find((e) => e.id === sablonWatch);
 
-    const colorCount = Number(form.getValues("colorCount"));
-    const printArea = Number(form.getValues("printArea"));
-    const qty = Number(form.getValues("quantity") || quantity || 1);
+    const clr = Number(colorCountWatch ?? 1);
+    const area = Number(printAreaWatch ?? 1);
+    const qty = Number(qtyWatch ?? 1);
 
-    let sablonCost = 0;
     const colorPrice = sab?.pricePerColor ?? 0;
-    if (sab) {
-      sablonCost = sab.basePrice + colorPrice * colorCount * printArea;
-    }
+    const sablonCost = sab ? sab.basePrice + colorPrice * clr * area : 0;
 
-    const unitPrice = productBasePrice + sablonCost;
+    const unit = productBasePrice + sablonCost;
 
-    form.setValue("unitPrice", unitPrice);
-
-    form.setValue("totalAmount", unitPrice * qty); //error di edit page
+    form.setValue("unitPrice", unit);
+    form.setValue("totalAmount", unit * qty);
   }, [
-    form.watch("sablonTypeId"),
-    form.watch("colorCount"),
-    form.watch("printArea"),
-    form.watch("quantity"),
+    sablonWatch,
+    colorCountWatch,
+    printAreaWatch,
+    qtyWatch,
     productBasePrice,
   ]);
-
-  // useEffect(() => {
-  //   const sablonId = form.watch("sablonTypeId");
-  //   const sab = sablon.find((e) => e.id === sablonId);
-
-  //   const colorCount = Number(form.watch("colorCount"));
-  //   const printArea = Number(form.watch("printArea"));
-  //   const qty = Number(form.watch("quantity") || 1);
-
-  //   const colorPrice = sab?.pricePerColor ?? 0;
-  //   const sablonCost = sab
-  //     ? sab.basePrice + colorPrice * colorCount * printArea
-  //     : 0;
-
-  //   const finalUnitPrice = productBasePrice + sablonCost;
-
-  //   form.setValue("unitPrice", finalUnitPrice);
-  //   form.setValue("totalAmount", finalUnitPrice * qty);
-  // }, [productBasePrice, sablon]);
 
   return (
     <div className="w-full mb-10">
@@ -356,7 +338,7 @@ const FormPage = ({
                       }
                     }}
                     defaultValue={field.value}
-                    disabled={loading}
+                    disabled={loading || id ? true : false}
                   >
                     <FormControl className="w-full">
                       <SelectTrigger>
@@ -459,10 +441,10 @@ const FormPage = ({
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
-                      field.onChange(value);
+
                       const selected = products.find((e) => e.id === value);
                       if (!selected) return;
-
+                      setStok(selected.stok);
                       form.setValue("size", selected.size ?? "");
                       form.setValue("color", selected.color ?? "");
 
@@ -687,12 +669,21 @@ const FormPage = ({
                         form.getValues("quantity") === 0 ? "" : field.value
                       }
                       onChange={(e) => {
-                        field.onChange(Number(e.target.value));
-                        form.setValue("quantity", Number(e.target.value));
+                        const value = Number(e.target.value);
+
+                        if (value >= stok) {
+                          form.setError("quantity", {
+                            message: "Jumlah melebihi stok produk",
+                          });
+                        } else {
+                          form.clearErrors("quantity");
+                        }
+
+                        field.onChange(value);
+                        form.setValue("quantity", value);
                         const getUnitPrice = form.getValues("unitPrice");
                         if (getUnitPrice) {
-                          const totalAmountValue =
-                            Number(e.target.value) * Number(getUnitPrice);
+                          const totalAmountValue = value * Number(getUnitPrice);
                           form.setValue("totalAmount", totalAmountValue);
                           form.clearErrors("totalAmount");
                         }
@@ -720,9 +711,10 @@ const FormPage = ({
                       className="w-full"
                       placeholder="Harga satuan"
                       readOnly
-                      value={
-                        form.getValues("unitPrice") === 0 ? "" : field.value
-                      }
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                      }}
+                      value={field.value === 0 ? "" : field.value}
                     />
                   </FormControl>
                   <FormMessage className=" text-xs text-destructive min-h-[20px]" />
@@ -744,14 +736,10 @@ const FormPage = ({
                       readOnly
                       className="w-full "
                       placeholder="Sub total"
-                      {...field}
-                      value={
-                        totalAmount
-                          ? form.watch("totalAmount")
-                            ? field.value
-                            : totalAmount
-                          : field.value
-                      }
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                      }}
+                      value={field.value === 0 ? "" : field.value}
                     />
                   </FormControl>
                   <FormMessage className=" text-xs text-destructive min-h-[20px]" />
@@ -962,6 +950,10 @@ const FormPage = ({
                         setNoPayments(Number(findNoPayment[0].no));
                         setNamePayment(findNoPayment[0].name);
                         form.setValue("noPayment", Number(findNoPayment[0].no));
+                      }
+                      if (value.toLowerCase() === "cash") {
+                        setNoPayments(0);
+                        setNamePayment("");
                       }
                     }}
                     defaultValue={field.value}

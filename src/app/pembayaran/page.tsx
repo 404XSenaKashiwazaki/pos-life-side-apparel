@@ -13,16 +13,9 @@ export const metadata: Metadata = {
 const Page = async () => {
   const { data } = await getPayments();
   const orders = await prisma.order.findMany({
-    where: {
-      payments: {
-        none: {
-          type: "FINAL",
-          status: "PAID",
-        },
-      },
-    },
     include: {
       customer: true,
+      designs: true,
       items: {
         include: {
           products: true,
@@ -32,7 +25,6 @@ const Page = async () => {
     },
   });
 
-
   const { data: payments } = await getPaymentMethods();
 
   return (
@@ -40,7 +32,7 @@ const Page = async () => {
       <div className="w-full">
         <TableSection
           data={data ?? []}
-          orders={orders?? []}
+          orders={orders ?? []}
           payments={payments ?? []}
         />
       </div>

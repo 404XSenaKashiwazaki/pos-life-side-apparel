@@ -36,7 +36,16 @@ const ReportStatusOrder = () => {
   const [orderStatus, setOrderStatus] = useState<OrderStatus | string>("");
   const [orders, setOrders] = useState<
     Prisma.OrderGetPayload<{
-      include: { customer: true; items: true; payments: true };
+      include: {
+        customer: true;
+        designs: true;
+        items: {
+          include: {
+            products: true;
+          };
+        };
+        payments: true;
+      };
     }>[]
   >();
   const [chartOrders, setChartOrders] =

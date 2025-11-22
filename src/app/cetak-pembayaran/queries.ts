@@ -23,8 +23,11 @@ export const byPayments = async ({
         },
       },
       include: {
+        method: true,
+
         order: {
           include: {
+            designs: true,
             customer: true,
             items: {
               include: {

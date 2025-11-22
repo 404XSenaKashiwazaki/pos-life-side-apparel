@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Login",
 };
 
-const page = () => {
+const page = async () => {
   return (
     <div>
       <Form />

@@ -130,7 +130,7 @@ model Order {
   updatedAt      DateTime        @updatedAt
   canceledAt     DateTime?
   items          OrderItem[]
-  payments       Payment[]
+  paymsent       Payment[]
   designs        Design[]
   logs           OrderLog[]
 

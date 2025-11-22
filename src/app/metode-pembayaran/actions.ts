@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 export const storeData = async (
   formdata: FormData
 ): Promise<Response<PaymentMethods>> => {
-  const parseData = formPaymentMethodsSchema.safeParse({
+  const parseData = await formPaymentMethodsSchema.safeParseAsync({
     name: formdata.get("name"),
     no: JSON.parse(formdata.get("no") as string),
     description: formdata.get("description"),
@@ -47,8 +47,7 @@ export const updateData = async (id: string, formdata: FormData) => {
     no: JSON.parse(formdata.get("no") as string),
     description: formdata.get("description"),
   });
-console.log("kontol");
-
+  
   if (!parseData.success)
     return sendResponse({
       success: false,

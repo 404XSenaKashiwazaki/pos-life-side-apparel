@@ -1,8 +1,13 @@
+import {
+  findDataPaymentByName,
+  findDataPaymentByNo,
+  findDataProductById,
+} from "@/lib/findData";
 import { OrderStatus, PaymentStatus, ProductionStatus } from "@prisma/client";
 import * as z from "zod";
 
 export const formCustomerSchema = z.object({
-  name: z.string().min(1, "Nama wajib di isi." ),
+  name: z.string().min(1, "Nama wajib di isi."),
   phone: z
     .string()
     .min(11, { message: "No hp di isi dan minimal 11 karakter" })
@@ -12,12 +17,48 @@ export const formCustomerSchema = z.object({
   notes: z.string().optional(),
 });
 
-export const formPaymentMethodsSchema = z.object({
-  name: z.string().min(1, "Nama wajib di isi"),
-  no: z
-    .number().optional(),
-  description: z.string().optional(),
-});
+export const formPaymentMethodsSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "Nama wajib di isi")
+      .superRefine(async (name, ctx) => {
+        const indDb = await findDataPaymentByName(name);
+        if (indDb)
+          ctx.addIssue({
+            code: "custom",
+            message: `Nama tidak boleh ada yang sama.`,
+            // path: ["name"],
+          });
+      }),
+    no: z
+      .number()
+      .optional()
+      .superRefine(async (no, ctx) => {
+        if (no) {
+          const indDb = await findDataPaymentByNo(no);
+          if (indDb)
+            ctx.addIssue({
+              code: "custom",
+              message: `Nomor tidak boleh ada yang sama.`,
+              // path: ["no"],
+            });
+        }
+      }),
+    description: z.string().optional(),
+  })
+  .superRefine((val, ctx) => {
+    if (
+      val.name !== "cash" &&
+      (val.no === undefined || val.no === null || val.no === 0)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Nomor wajib diisi jika nama bukan 'CASH'.",
+        path: ["no"],
+      });
+    }
+  });
 
 export const formHargaJenisSchema = z.object({
   name: z.string().min(1, { message: "Nama wajib di isi." }),
@@ -50,75 +91,86 @@ export const formHargaJenisSchema = z.object({
   isAtive: z.boolean().optional(),
 });
 
-export const formOrderSchema = z.object({
-  // tb order /tb order item/ tb paryment
-  orderNumber: z.string().min(1, "Order number wajib di isi."),
-  customerId: z.string().min(1, "Customer  wajib di isi."), //tb design/tb order
-  handleById: z.string().min(1, "Yang mengerjakan wajib di isi."),
-  createdAt: z
-    .union([z.string(), z.date(), z.undefined()])
-    .default(new Date())
-    .optional(),
-  product: z.string().min(1, "Produk/barang  wajib di isi."),
-  color: z.string().min(1, "Warna wajib di isi."),
-  unitPrice: z
-    .number()
-    .min(1, "Harga per unit wajib di isi.")
-    .max(99999999999, "Harga per unit maksimal 11 digit."),
-  quantity: z.number().min(1, "Jumlah wajib di isi.").optional(),
-  paymentMethod: z.string().min(1, "Metode Pembayaran wajib di isi."),
-  noPayment:  z
-    .number()
-    .min(1, "Nomor pembayaran wajib di isi.")
-    .max(99999999999, "Nomor pembayaran maksimal 11 digit.").optional(),
-  totalAmount: z
-    .number()
-    .min(1, "Sub total wajib di isi.")
-    .max(99999999999, "Sub total maksimal 11 digit."),
-  notes: z.string().optional(),
-  status: z.string().min(1, "Status pemesanan wajib di isi."),
-  size: z.string().min(1, "Ukuran wajib di isi."),
-  // tb design
-  filename: z.union([z.instanceof(File), z.string()]).refine(
-    (val) => {
-      if (val instanceof File) return val.size > 0;
-      if (typeof val === "string") return val.trim().length > 0;
-      return false;
-    },
-    {
-      message: "Desain file wajib diisi.",
-    }
-  ),
-  previewUrl: z.string().optional(),
-  productionDue: z.union([z.string(), z.date()]),
-  //
-  name: z.string().min(1, "Nama pemesan file wajib di isi."),
-  phone: z.string().min(1, "Nomor hp pemesan file wajib di isi."),
-  address: z.string().min(1, "Alamat pemesan wajib di isi."),
-  email: z
-    .email({ message: "Email pemesan tidak valid" })
-    .min(1, "Email pemesan wajib di isi."),
+export const formOrderSchema = z
+  .object({
+    // tb order /tb order item/ tb paryment
+    orderNumber: z.string().min(1, "Order number wajib di isi."),
+    customerId: z.string().min(1, "Customer  wajib di isi."), //tb design/tb order
+    handleById: z.string().min(1, "Yang mengerjakan wajib di isi."),
+    createdAt: z
+      .union([z.string(), z.date(), z.undefined()])
+      .default(new Date())
+      .optional(),
+    product: z.string().min(1, "Produk/barang  wajib di isi."),
+    color: z.string().min(1, "Warna wajib di isi."),
+    unitPrice: z
+      .number()
+      .min(1, "Harga per unit wajib di isi.")
+      .max(99999999999, "Harga per unit maksimal 11 digit."),
+    quantity: z.number().min(1, "Jumlah wajib di isi.").optional(),
+    paymentMethod: z.string().min(1, "Metode Pembayaran wajib di isi."),
+    noPayment: z.number().optional(),
+    totalAmount: z
+      .number()
+      .min(1, "Sub total wajib di isi.")
+      .max(99999999999, "Sub total maksimal 11 digit."),
+    notes: z.string().optional(),
+    status: z.string().min(1, "Status pemesanan wajib di isi."),
+    size: z.string().min(1, "Ukuran wajib di isi."),
+    // tb design
+    filename: z.union([z.instanceof(File), z.string()]).refine(
+      (val) => {
+        if (val instanceof File) return val.size > 0;
+        if (typeof val === "string") return val.trim().length > 0;
+        return false;
+      },
+      {
+        message: "Desain file wajib diisi.",
+      }
+    ),
+    previewUrl: z.string().optional(),
+    productionDue: z.union([z.string(), z.date()]),
+    //
+    name: z.string().min(1, "Nama pemesan file wajib di isi."),
+    phone: z.string().min(1, "Nomor hp pemesan file wajib di isi."),
+    address: z.string().min(1, "Alamat pemesan wajib di isi."),
+    email: z
+      .email({ message: "Email pemesan tidak valid" })
+      .min(1, "Email pemesan wajib di isi."),
 
-  //
-  sablonTypeId: z.string().min(1, "Type sablon wajib di isi."),
-  colorCount: z
-    .number()
-    .min(1, "Jumlah warna wajib di isi.")
-    .max(99999999999, "Jumlah warna maksimal 11 digit."),
-  printArea: z
-    .number()
-    .min(1, "Area sablon wajib di isi.")
-    .max(99999999999, "Area sabblon maksimal 11 digit."),
-  shippingFee: z
-    .number()
-    .min(1, "Biaya pengiriman wajib di isi.")
-    .max(99999999999, "Biaya pengiriman maksimal 11 digit."),
-  discountAmount: z
-    .number()
-    .max(99999999999, "Diskon maksimal 11 digit.")
-    .optional(),
-  printAreas: z.string().max(191).optional(),
-});
+    //
+    sablonTypeId: z.string().min(1, "Type sablon wajib di isi."),
+    colorCount: z
+      .number()
+      .min(1, "Jumlah warna wajib di isi.")
+      .max(99999999999, "Jumlah warna maksimal 11 digit."),
+    printArea: z
+      .number()
+      .min(1, "Area sablon wajib di isi.")
+      .max(99999999999, "Area sabblon maksimal 11 digit."),
+    shippingFee: z
+      .number()
+      .min(1, "Biaya pengiriman wajib di isi.")
+      .max(99999999999, "Biaya pengiriman maksimal 11 digit."),
+    discountAmount: z
+      .number()
+      .max(99999999999, "Diskon maksimal 11 digit.")
+      .optional(),
+    printAreas: z.string().max(191).optional(),
+  })
+  .superRefine(async (val, ctx) => {
+    if (val.product) {
+      const product = await findDataProductById(val.product);
+      if (product && val.quantity) {
+        if (val.quantity >= product?.stok)
+          ctx.addIssue({
+            code: "custom",
+            message: "Jumlah melebihi stok produk.",
+            path: ["quantity"],
+          });
+      }
+    }
+  });
 
 export const formPaymentSchema = z.object({
   orderId: z.string().min(1, "Pemesan dan produk pesanan wajib di isi."),

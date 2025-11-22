@@ -76,8 +76,8 @@ const DetailPage: React.FC<DetailPageProps> = ({ id }) => {
           <Image
             src={data.reference ?? ""}
             alt={data.filename}
-            width={100}
-            height={100}
+            width={500}
+            height={500}
             priority
             className="w-full h-full rounded-md"
           />

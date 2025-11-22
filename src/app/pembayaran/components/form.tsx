@@ -58,6 +58,7 @@ interface FormOrderProps {
   orders: Prisma.OrderGetPayload<{
     include: {
       customer: true;
+      designs: true;
       items: {
         include: {
           products: true;
@@ -87,6 +88,8 @@ const FormPage = ({
   amountReturn,
   orderAmount,
 }: Partial<z.infer<typeof formPaymentSchema>> & FormOrderProps) => {
+  console.log({ orders });
+
   const [remainingPayment, setRemainingPayment] = useState<
     number | string | null
   >(null);
@@ -110,6 +113,7 @@ const FormPage = ({
     Prisma.OrderGetPayload<{
       include: {
         customer: true;
+        designs: true;
         items: {
           include: {
             products: true;
@@ -150,7 +154,8 @@ const FormPage = ({
     formData.append("status", values.status);
     formData.append("reference", values.reference);
     formData.append("notes", values.notes ?? "");
-    formData.append("amountReturn", JSON.stringify(change));
+    formData.append("amountReturn", JSON.stringify(values.amountReturn));
+
     try {
       setLoading(true);
       const { success, message, error } = id
@@ -172,6 +177,7 @@ const FormPage = ({
     }
   };
 
+
   const findCustomerProduct = (id: string) =>
     orders.find((e) => String(e.id) === id);
 
@@ -192,7 +198,6 @@ const FormPage = ({
     }
   }, [id, orders]);
 
-
   return (
     <div className="w-full">
       <Form {...form}>
@@ -208,9 +213,9 @@ const FormPage = ({
                     Pemesan dan produk pesanan
                   </label>
                   <div className="flex flex-col sm:flex-row  gap-1 rounded-sm bg-slate-200 py-1 px-2">
-                    {orders[0].customer.name} -{" "}
+                    {orders[0]?.customer.name} -{" "}
                     <Image
-                      src={orders[0].items[0].products.fileUrl ?? ""}
+                      src={orders[0].designs[0].fileUrl ?? ""}
                       alt={orders[0].items[0].products.name}
                       width={100}
                       height={100}
@@ -218,7 +223,12 @@ const FormPage = ({
                     />
                     {orders[0].items[0].products.name} -{" "}
                     {orders[0].items[0].products.size} -{" "}
-                    {orders[0].items[0].products.color}
+                    {orders[0].items[0].products.color}{" "}
+                    {
+                      <span className="capitalize">
+                        {orders[0].paymentMethod}
+                      </span>
+                    }
                   </div>
                 </div>
               </>
@@ -238,6 +248,7 @@ const FormPage = ({
                       onValueChange={(value) => {
                         setReadonly(false);
                         field.onChange(value);
+                        // if(!id) form.setValue("method","")
                         form.setValue("orderId", value);
                         const getCountAmount = findCustomerProduct(value);
                         const amountTotal = getCountAmount?.totalAmount;
@@ -276,7 +287,7 @@ const FormPage = ({
                           <SelectItem key={e.id} value={e.id}>
                             {e.customer.name} -{" "}
                             <Image
-                              src={e.items[0].products.fileUrl ?? ""}
+                              src={e.designs[0].fileUrl ?? ""}
                               alt={e.items[0].products.name}
                               width={100}
                               height={100}
@@ -284,7 +295,12 @@ const FormPage = ({
                             />
                             {e.items[0].products.name} -{" "}
                             {e.items[0].products.size} -{" "}
-                            {e.items[0].products.color}
+                            {e.items[0].products.color} -{" "}
+                            {
+                              <span className="capitalize">
+                                {e.paymentMethod}
+                              </span>
+                            }
                           </SelectItem>
                         ))}
                       </SelectContent>

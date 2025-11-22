@@ -41,9 +41,10 @@ export const addOrder = async (
     discountAmount: JSON.parse(formdata.get("discountAmount") as string),
     noPayment: JSON.parse(formdata.get("noPayment") as string),
     paymentMethod: formdata.get("paymentMethod"),
+    printAreas: formdata.get("printAreas"),
   };
 
-  const parseData = formOrderSchema.safeParse(raw);
+  const parseData = await formOrderSchema.safeParseAsync(raw);
   if (!parseData.success)
     return sendResponse({
       success: false,
@@ -83,8 +84,6 @@ export const addOrder = async (
     unitPrice: data.unitPrice,
   });
 
-  console.log({ quantity: data.quantity });
-
   try {
     const order = await prisma.order.create({
       data: {
@@ -109,7 +108,6 @@ export const addOrder = async (
             costPrice: costAndProfit.costPrice,
             costTotal: costAndProfit.costTotal,
             printAreas: data.printAreas,
-
             quantity: data.quantity,
             size: data.size,
             printArea: data.printArea,
@@ -135,17 +133,27 @@ export const addOrder = async (
       },
     });
 
+    await prisma.product.update({
+      data: {
+        stok: {
+          decrement: data.quantity,
+        },
+      },
+      where: {
+        id: data.product,
+      },
+    });
+
     const orderItems = await prisma.orderItem.findMany({
       where: { orderId: order.id },
     });
 
     const orderSubtotal = orderItems.reduce((sum, i) => sum + i.subtotal, 0);
-    console.log({ orderSubtotal });
-    console.log({ totalAmount: data.totalAmount });
+
 
     const finalTotal =
       orderSubtotal + (data.shippingFee || 0) - (data.discountAmount || 0);
-    console.log({ finalTotal });
+ 
 
     await prisma.order.update({
       where: {
@@ -173,7 +181,7 @@ export const addOrder = async (
       await removeFile(filePath);
     }
 
-    console.log({ error });
+   
     return sendResponse({
       success: false,
       message: "Menambahkan data pemesanan",
@@ -215,7 +223,7 @@ export const updateOrder = async (
     paymentMethod: formdata.get("paymentMethod"),
   };
 
-  const parseData = formOrderSchema.safeParse(raw);
+  const parseData = await formOrderSchema.safeParseAsync(raw);
 
   if (!parseData.success)
     return sendResponse({
@@ -230,11 +238,13 @@ export const updateOrder = async (
       items: {
         include: {
           production: true,
+          products: true,
         },
       },
       designs: true,
     },
   });
+
   if (!dataInDb)
     return sendResponse({
       success: false,
@@ -266,25 +276,42 @@ export const updateOrder = async (
   });
 
   try {
-    // const { data } = parseData;
-    if (!file) {
+    const difference = data.quantity ?? 1 - dataInDb.items[0].quantity;
+
+    if (!file || typeof file === "string") {
       fileName = dataInDb.designs[0].filename;
       fileUrl = dataInDb.designs[0].fileUrl;
     } else {
-      const filePath = getFilePath(dataInDb.designs[0].fileUrl);
-      const fileUpload = await uploadFile(file, "uploads");
-      fileName = fileUpload.fileName;
-      fileUrl = fileUpload.fileUrl;
-      if (
-        dataInDb.designs[0].filename !==
-          (process.env.PREVIEW_IMAGE as string) &&
-        existsSync(filePath)
-      ) {
-        console.log("remove file");
-        await removeFile(filePath);
+      if (file instanceof File) {
+        const filePath = getFilePath(dataInDb.designs[0].fileUrl);
+        const fileUpload = await uploadFile(file, "uploads");
+        fileName = fileUpload.fileName;
+        fileUrl = fileUpload.fileUrl;
+        if (
+          dataInDb.designs[0].filename !==
+            (process.env.PREVIEW_IMAGE as string) &&
+          existsSync(filePath)
+        ) {
+          console.log("remove file");
+          await removeFile(filePath);
+        }
       }
     }
+    if (difference > 0)
+      await prisma.product.update({
+        where: { id: data.product },
+        data: {
+          stok: { decrement: difference },
+        },
+      });
 
+    if (difference < 0)
+      await prisma.product.update({
+        where: { id: data.product },
+        data: {
+          stok: { increment: Math.abs(difference) },
+        },
+      });
     await prisma.$transaction([
       prisma.order.update({
         data: {
@@ -346,17 +373,14 @@ export const updateOrder = async (
         where: { id },
       }),
     ]);
-    const orderItems = await prisma.orderItem.findMany({
-      where: { orderId: dataInDb.items[0].id },
-    });
 
-    const orderSubtotal = orderItems.reduce((sum, i) => sum + i.subtotal, 0);
-    console.log({ orderSubtotal });
-    console.log({ totalAmount: data.totalAmount });
+
+    const orderSubtotal = dataInDb.items[0].subtotal
+  
 
     const finalTotal =
       orderSubtotal + (data.shippingFee || 0) - (data.discountAmount || 0);
-    console.log({ finalTotal });
+    
 
     await prisma.order.update({
       where: {
@@ -385,7 +409,7 @@ export const updateOrder = async (
       await removeFile(filePath);
       console.log("remove file");
     }
-    console.log({ error });
+
 
     return sendResponse({
       success: false,
@@ -393,46 +417,74 @@ export const updateOrder = async (
     });
   }
 };
+
 export const deleteOrder = async (id: string): Promise<Response<Order>> => {
   try {
     const dataInDb = await prisma.order.findUnique({
       where: { id },
-      include: { designs: true, payments: true },
+      include: {
+        designs: true,
+        payments: true,
+        items: {
+          include: {
+            production: true,
+          },
+        },
+      },
     });
 
-    if (!dataInDb)
+    if (!dataInDb) {
       return sendResponse({
         success: false,
         message: "Mendapatkan data pemesanan",
       });
-    const filePath = getFilePath(dataInDb.designs[0].fileUrl);
-    const payments = dataInDb.payments;
-    if (payments && Array.isArray(payments) && payments.length > 1) {
-      payments.forEach(async (e) => {
-        if (
-          e.filename !== (process.env.PREVIEW_IMAGE as string) &&
-          existsSync(filePath)
-        ) {
-          await removeFile(getFilePath(e.reference));
-          console.log("remove file");
-        }
+    }
+
+    if (dataInDb.status === "PENDING" || dataInDb.status === "CONFIRMED") {
+      await prisma.product.update({
+        where: { id: dataInDb.items[0].product },
+        data: {
+          stok: { increment: dataInDb.items[0].quantity },
+        },
       });
     }
-    await prisma.order.delete({ where: { id } });
-    if (
-      dataInDb.designs[0].filename !== (process.env.PREVIEW_IMAGE as string) &&
-      existsSync(filePath)
-    ) {
-      await removeFile(filePath);
-      console.log("remove file");
+
+    const payments = dataInDb.payments ?? [];
+    if (payments.length > 0) {
+      for (const pay of payments) {
+        if (pay.filename !== process.env.PREVIEW_IMAGE && pay.reference) {
+          const paymentPath = getFilePath(pay.reference);
+          if (existsSync(paymentPath)) {
+            await removeFile(paymentPath);
+            console.log("remove payment file");
+          }
+        }
+      }
     }
+
+    if (dataInDb.designs.length > 0) {
+      const fileUrl = dataInDb.designs[0].fileUrl;
+      const filePath = getFilePath(fileUrl);
+
+      if (
+        dataInDb.designs[0].filename !== process.env.PREVIEW_IMAGE &&
+        existsSync(filePath)
+      ) {
+        await removeFile(filePath);
+        console.log("remove design file");
+      }
+    }
+
+    await prisma.order.delete({ where: { id } });
+
     revalidatePath("pemesanan");
+
     return sendResponse({
       success: true,
       message: "Menghapus data pemesanan",
     });
   } catch (error) {
-    console.log({ error });
+    
 
     return sendResponse({
       success: false,

@@ -45,12 +45,13 @@ const FormPage = ({
       description: description ?? "",
     },
   });
-
+  console.log({ form: form.formState.errors });
   const onSubmit = async (values: z.infer<typeof formPaymentMethodsSchema>) => {
     const formData = new FormData();
     formData.append("name", values.name);
     formData.append("no", JSON.stringify(values.no));
     formData.append("description", values.description ?? "");
+
     try {
       setLoading(true);
       const { success, message, error } = id
@@ -110,6 +111,7 @@ const FormPage = ({
                     placeholder="Masukan nomor"
                     onChange={(e) => {
                       field.onChange(Number(e.target.value));
+                      form.clearErrors("no");
                     }}
                     defaultValue={field.value === 0 ? "" : field.value}
                   />

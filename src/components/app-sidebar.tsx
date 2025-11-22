@@ -11,7 +11,6 @@ import {
   IconFileWord,
   IconFolder,
   IconHelp,
-  IconInnerShadowTop,
   IconReport,
   IconSearch,
   IconSettings,
@@ -43,12 +42,10 @@ import { useSite } from "@/components/providers/Site-provider";
 import Image from "next/image";
 import defaultImg from "@/public/preview.jpg";
 
+// ------------------------------
+// NAV DATA
+// ------------------------------
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -62,7 +59,7 @@ const data = {
       icon: IconPackage,
       activeUrl: ["/produk"],
     },
-     {
+    {
       title: "Ukuran Produk",
       url: "/ukuran-produk",
       icon: IconResize,
@@ -74,7 +71,7 @@ const data = {
       icon: IconShoppingCart,
       activeUrl: ["/pemesanan"],
     },
-     {
+    {
       title: "Metode Pembayaran",
       url: "/metode-pembayaran",
       icon: IconCreditCardFilled,
@@ -105,7 +102,7 @@ const data = {
       activeUrl: ["/harga-jenis"],
     },
     {
-      title: "Users ",
+      title: "Users",
       url: "/users",
       icon: IconUsers,
       activeUrl: ["/users"],
@@ -114,96 +111,13 @@ const data = {
       title: "Laporan",
       url: "/laporan",
       icon: IconChartBar,
-      activeUrl: ["/laporan", "/cetak-pemesanan","/cetak-pembayaran"],
+      activeUrl: ["/laporan", "/cetak-pemesanan", "/cetak-pembayaran"],
     },
-
     {
       title: "Pengaturan",
       url: "/pengaturan",
       icon: IconSettings,
       activeUrl: ["/pengaturan"],
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
     },
   ],
 };
@@ -214,6 +128,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname() ?? "/";
 
   if (!session) return null;
+
+  const role = session?.user?.role?.toLowerCase();
+
+  const hiddenForStaff = ["/users", "/metode-pembayaran"];
+  const hiddenForOwner = ["/users"];
+
+  const filteredMenu = data.navMain.filter((item) => {
+    if (role === "staff" && hiddenForStaff.includes(item.url)) return false;
+    if (role === "owner" && hiddenForOwner.includes(item.url)) return false;
+    return true; 
+  });
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -232,7 +158,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   height={100}
                   priority
                 />
-
                 <span className="text-base font-semibold uppercase">
                   {site?.name}
                 </span>
@@ -241,9 +166,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
-        <NavMain items={data.navMain} pathname={pathname} />
+        {/* Inject menu yang sudah difilter */}
+        <NavMain items={filteredMenu} pathname={pathname} />
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser user={Object(session?.user)} />
       </SidebarFooter>

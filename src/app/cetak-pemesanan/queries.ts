@@ -24,6 +24,7 @@ export const byOrders = async ({
       },
       include: {
         customer: true,
+        payments: true,
         items: {
           include: {
             products: true,

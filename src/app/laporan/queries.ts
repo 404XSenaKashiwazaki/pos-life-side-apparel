@@ -3,11 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendResponse } from "@/lib/response";
 import { Response } from "@/types/response";
-import {
-  OrderStatus,
-  PaymentStatus,
-  Prisma,
-} from "@prisma/client";
+import { OrderStatus, PaymentStatus, Prisma } from "@prisma/client";
 
 export type ByStatusOrdersToCard = {
   status: OrderStatus;
@@ -21,7 +17,14 @@ export const getOrdersStatus = async (
 ): Promise<
   Response<
     Prisma.OrderGetPayload<{
-      include: { customer: true; items: true; payments: true };
+      include: {
+        customer: true;
+        designs: true;
+        items: {
+          include: { products: true };
+        };
+        payments: true;
+      };
     }>[]
   >
 > => {
@@ -30,7 +33,14 @@ export const getOrdersStatus = async (
       where: {
         status: (status as OrderStatus) || OrderStatus.PENDING,
       },
-      include: { customer: true, items: true, payments: true },
+      include: {
+        customer: true,
+        designs: true,
+        items: {
+          include: { products: true },
+        },
+        payments: true,
+      },
     });
     if (!resAll)
       return sendResponse({
@@ -184,8 +194,11 @@ export const getPaymentsStatus = async (
       include: {
         order: {
           include: {
-            items: true;
-            customer: true
+            designs: true;
+            items: {
+              include: { products: true };
+            };
+            customer: true;
           };
         };
       };
@@ -200,14 +213,16 @@ export const getPaymentsStatus = async (
       include: {
         order: {
           include: {
-            items: true,
-            customer: true
+            designs: true,
+            items: {
+              include: { products: true },
+            },
+            customer: true,
           },
         },
       },
     });
 
-    
     if (!resAll)
       return sendResponse({
         success: false,

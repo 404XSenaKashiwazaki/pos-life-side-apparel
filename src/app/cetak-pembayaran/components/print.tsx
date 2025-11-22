@@ -12,8 +12,12 @@ const CardSection = dynamic(() => import("./payment"), {
   ssr: false,
 });
 
-const PrintSection = () => {
-  return <CardSection id={["cmi7rl5zo0009j7ossp0iqb95"]} status="PAID" />;
+interface PrintSectionProps {
+  id: string[];
+  status: string;
+}
+const PrintSection:React.FC<PrintSectionProps> = ({id, status}) => {
+  return <CardSection id={id} status={status.toUpperCase()} />;
 };
 
 export default PrintSection;

@@ -15,6 +15,7 @@ export const getPayments = async (): Promise<
         order: {
           include: {
             customer: true,
+            designs: true,
             items: {
               include: {
                 products: true,
@@ -58,6 +59,7 @@ export const getPaymentById = async (
         order: {
           include: {
             customer: true,
+            designs: true,
             items: {
               include: {
                 products: true,

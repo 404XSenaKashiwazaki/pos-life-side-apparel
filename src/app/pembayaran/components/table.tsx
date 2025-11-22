@@ -16,11 +16,12 @@ const DataTable = dynamic(() => import("./data-table"), {
 });
 
 interface TableSectionProps {
-  payments: PaymentMethods[]
+  payments: PaymentMethods[];
   data: ColumnPaymentTypeDefProps[];
   orders: Prisma.OrderGetPayload<{
     include: {
       customer: true;
+      designs: true;
       items: {
         include: {
           products: true;
@@ -30,10 +31,14 @@ interface TableSectionProps {
     };
   }>[];
 }
-const TableSection: React.FC<TableSectionProps> = ({ data, orders, payments }) => {
+const TableSection: React.FC<TableSectionProps> = ({
+  data,
+  orders,
+  payments,
+}) => {
   return (
     <div>
-      <DataTable data={data} orders={orders}  payments={payments}/>
+      <DataTable data={data} orders={orders} payments={payments} />
     </div>
   );
 };

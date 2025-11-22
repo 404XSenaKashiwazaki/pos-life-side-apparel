@@ -21,9 +21,12 @@ import { useSheet } from "@/components/providers/Sheet-provider";
 import {
   IconAlertCircle,
   IconInfoCircle,
+  IconPrinter,
   IconShoppingCartPlus,
 } from "@tabler/icons-react";
 import DeleteModal from "./delete";
+import OrdersPrint from "./print";
+import { useSite } from "@/components/providers/Site-provider";
 
 interface CellActionProps {
   row: Row<ColumnOrderTypeDefProps>;
@@ -43,7 +46,7 @@ const CellAction = ({
 }: CellActionProps) => {
   const { modal, setOpen } = useModal();
   const { sheet } = useSheet();
-
+  const sites = useSite();
   const showModalDelete = () => {
     modal({
       title: (
@@ -69,6 +72,9 @@ const CellAction = ({
       description: "form untuk edit data pemesanan ",
       content: (
         <FormPage
+          noPayment={Number(row.original.noPayment)}
+          stokInDb={row.original.items[0].products.stok}
+          paymentMethod={row.original.paymentMethod ?? ""}
           products={products}
           payments={payments}
           colorCount={row.original.items[0].colorCount ?? 0}
@@ -120,8 +126,39 @@ const CellAction = ({
     });
   };
 
+  const showModalPrint = () => {
+    modal({
+      title: (
+        <div className="flex gap-1">
+          <IconPrinter className="h-5 w-5" />
+          Cetak Invoice Pemesanan
+        </div>
+      ),
+      body: (
+        <OrdersPrint
+          id={row.original.id}
+          siteName={sites?.name ?? ""}
+          siteFileUrl={sites?.fileProofUrl ?? ""}
+          siteAddress={sites?.address ?? ""}
+          siteEmail={sites?.email ?? ""}
+          sitePhone={sites?.phone ?? ""}
+        />
+      ),
+      size: "sm:max-w-2xl",
+    });
+  };
+
   return (
     <div className="flex gap-1 flex-col md:flex-row w">
+      <Button
+        variant="ghost"
+        size={"sm"}
+        className="bg-green-700 hover:bg-green-600 text-white hover:text-slate-50"
+        onClick={() => showModalPrint()}
+      >
+        <IconPrinter />
+        Cetak
+      </Button>
       <Button variant="outline" size={"sm"} onClick={() => showModalDetail()}>
         <SearchCheck />
         Detail
@@ -231,7 +268,7 @@ export const columns = ({
     ),
   },
   {
-    accessorKey: "totalAmount",
+    accessorKey: "subtotal",
     header: ({ column }) => {
       return (
         <Button
@@ -244,9 +281,27 @@ export const columns = ({
       );
     },
     cell: ({ row }) => (
+      <div className="">{formatCurrency(row.original.items[0].subtotal)}</div>
+    ),
+  },
+  {
+    accessorKey: "totalAmount",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Sub Total
+          <ArrowUpDown />
+        </Button>
+      );
+    },
+    cell: ({ row }) => (
       <div className="">{formatCurrency(row.getValue("totalAmount"))}</div>
     ),
   },
+
   {
     id: "actions",
     header: () => <div>Action</div>,

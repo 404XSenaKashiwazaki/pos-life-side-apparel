@@ -1,10 +1,10 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 
 export default async function middleware(request: NextRequest) {
   const currentUrl = request.nextUrl.pathname;
-  const protedtedRoute = [
+
+  const protectedRoute = [
     "/",
     "/dashboard",
     "/pengaturan",
@@ -16,18 +16,43 @@ export default async function middleware(request: NextRequest) {
     "/laporan",
     "/cetak-pembayaran",
     "/cetak-pemesanan",
-    "/metode-pembayaran"
+    "/metode-pembayaran",
   ];
-  const userAuth = await auth();
-  const role = userAuth?.user.role;
 
-  if (!userAuth && protedtedRoute.includes(currentUrl)) {
+  const adminRoute = protectedRoute;
+  const staffRoute = protectedRoute.filter(
+    (e) => !["/users", "/metode-pembayaran"].includes(e)
+  );
+  const ownerRoute = protectedRoute.filter((e) => e !== "/users");
+
+  const userAuth = await auth();
+  const role = userAuth?.user?.role?.toLowerCase();
+
+  // Jika belum login & mengakses protected route
+  if (!userAuth && protectedRoute.includes(currentUrl)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", currentUrl);
     return NextResponse.redirect(loginUrl);
   }
-  if (userAuth && currentUrl.startsWith("/login"))
+
+  // Jika sudah login, jangan bisa buka halaman login
+  if (userAuth && currentUrl === "/login") {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (role) {
+    const roleAccessMap: Record<string, string[]> = {
+      admin: adminRoute,
+      staff: staffRoute,
+      manager: ownerRoute,
+    };
+
+    const allowedRoutes = roleAccessMap[role];
+
+    if (protectedRoute.includes(currentUrl) && !allowedRoutes.includes(currentUrl)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
 
   return NextResponse.next();
 }

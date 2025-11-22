@@ -26,6 +26,7 @@ const DetailPage = ({ id }: DetailPembelianProps) => {
   const [data, setData] = useState<Prisma.OrderGetPayload<{
     include: {
       customer: true;
+      payments: true;
       items: {
         include: {
           products: true;

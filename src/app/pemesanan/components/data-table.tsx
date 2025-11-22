@@ -41,6 +41,7 @@ import FormPage from "./form";
 import { ColumnOrderTypeDefProps } from "@/types/datatable";
 import { useSheet } from "@/components/providers/Sheet-provider";
 import { IconShoppingCartPlus } from "@tabler/icons-react";
+import { useSite } from "@/components/providers/Site-provider";
 
 interface DataTableProps {
   data: ColumnOrderTypeDefProps[];
@@ -59,6 +60,9 @@ export const DataTable = ({
   products,
   payments,
 }: DataTableProps) => {
+  const sites = useSite();
+  console.log({ sites });
+
   const { sheet } = useSheet();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);

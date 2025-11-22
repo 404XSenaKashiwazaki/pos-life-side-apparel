@@ -42,6 +42,7 @@ export type ColumnOrderTypeDefProps = Omit<
 export type PrintOrders = Prisma.OrderGetPayload<{
   include: {
     customer: true;
+    payments: true;
     items: {
       include: {
         products: true;
@@ -58,8 +59,10 @@ export type ColumnPaymentTypeDefProps = Omit<
   Prisma.PaymentGetPayload<{
     include: {
       method: true;
+
       order: {
         include: {
+          designs: true;
           customer: true;
           items: {
             include: {

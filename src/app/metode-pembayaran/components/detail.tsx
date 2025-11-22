@@ -1,26 +1,9 @@
 "use client";
-import { Calendar, DollarSign, PhoneCall, Tag, User2Icon } from "lucide-react";
-import {
-  IconAddressBook,
-  IconBuilding,
-  IconBuildingStore,
-  IconMail,
-  IconNotebook,
-  IconPackage,
-  IconPencil,
-  IconPhone,
-  IconShield,
-  IconShieldExclamation,
-  IconUserCircle,
-} from "@tabler/icons-react";
 import React, { useEffect, useState, useTransition } from "react";
-
-import { format } from "date-fns";
-import { formatCurrency } from "@/lib/formatCurrency";
-import { Customer, PaymentMethods, User } from "@prisma/client";
+import { PaymentMethods } from "@prisma/client";
 import { getPaymentMethodsById } from "../queries";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 interface DetailPembelianProps {
   id: string | null;
@@ -52,9 +35,9 @@ if(isPending) return <Skeleton className="w-full h-52"/>
         </div>
          <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
           <span className="flex items-center gap-1 text-muted-foreground  w-full">
-           Email
+           Nomor
           </span>
-          <span className="font-xs text-primary  w-full  flex items-start gap-1"><p>:</p><p>{data.no ?? "-"}</p></span>
+          <span className="font-xs text-primary  w-full  flex items-start gap-1"><p>:</p><Card className="rounded-sm px-4 py-1 border-0"><p>{data.no ?? "-"}</p></Card></span>
         </div>
          <div className="flex flex-col sm:flex-row gap-1 items-center justify-between text-sm ">
           <span className="flex items-center gap-1 text-muted-foreground  w-full">

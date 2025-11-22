@@ -293,7 +293,7 @@ const FormPage = ({
               disabled={loading}
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Foto status pengerjaan <span className="text-red-600 font-sm">*</span></FormLabel>
+                  <FormLabel>Foto status pengerjaan </FormLabel>
                   <FormControl>
                     <Input
                       type="file"

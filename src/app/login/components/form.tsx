@@ -11,28 +11,31 @@ import {
 } from "@/components/ui/card";
 import { login } from "../actions";
 import { GalleryVerticalEnd } from "lucide-react";
+import { useSite } from "@/components/providers/Site-provider";
 
 const Form = () => {
+  const site = useSite();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center ">
-      <div className="flex w-full max-w-sm flex-col gap-5">
+    <div className="flex min-h-screen mt-10 sm:mt-40 justify-center">
+      <div className="w-full max-w-sm flex flex-col gap-5">
         <a className="flex items-center gap-2 self-center font-medium">
           <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
             <GalleryVerticalEnd className="size-4" />
           </div>
-          { process.env.NEXT_PUBLIC_APP_NAME ?? "" }
+          {site?.name ?? process.env.NEXT_PUBLIC_APP_NAME}
         </a>
-        {/*  */}
-        <Card className="w-full max-w-sm mx-auto ">
+
+        <Card className="w-full max-w-sm">
           <form action={login.bind(null, redirect)}>
             <CardHeader>
-              <CardTitle>Login </CardTitle>
+              <CardTitle>Login</CardTitle>
               <CardDescription>
                 Silahkan login menggunakan akun Google
               </CardDescription>
             </CardHeader>
+
             <CardFooter className="flex-col gap-2 py-2 mt-5">
               <Button type="submit" variant="default" className="w-full">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

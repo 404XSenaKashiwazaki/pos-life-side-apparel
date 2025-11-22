@@ -43,6 +43,7 @@ interface DataTableProps {
   orders: Prisma.OrderGetPayload<{
     include: {
       customer: true;
+      designs: true;
       items: {
         include: {
           products: true;
@@ -96,7 +97,7 @@ export const DataTable = ({ data, orders, payments }: DataTableProps) => {
         </>
       ),
       description: "Form tambah data pembayaran",
-      content: <FormPage orders={orders} payments={payments} />,
+      content: <FormPage orders={orders} payments={payments}  />,
       size: "sm:max-w-2xl",
     });
   };

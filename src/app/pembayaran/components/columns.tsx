@@ -22,9 +22,12 @@ import {
   IconAlertCircle,
   IconCreditCardPay,
   IconInfoCircle,
+  IconPrinter,
 } from "@tabler/icons-react";
 import { useSheet } from "@/components/providers/Sheet-provider";
 import DeleteModal from "./delete";
+import PaymentsPrint from "./print";
+import { useSite } from "@/components/providers/Site-provider";
 
 interface CellActionProps {
   payments: PaymentMethods[];
@@ -32,6 +35,7 @@ interface CellActionProps {
   orders: Prisma.OrderGetPayload<{
     include: {
       customer: true;
+      designs: true;
       items: {
         include: {
           products: true;
@@ -43,6 +47,7 @@ interface CellActionProps {
 }
 
 const CellAction = ({ row, orders, payments }: CellActionProps) => {
+  const sites = useSite();
   const { modal, setOpen } = useModal();
   const { sheet } = useSheet();
 
@@ -105,8 +110,38 @@ const CellAction = ({ row, orders, payments }: CellActionProps) => {
     });
   };
 
+  const showModalPrint = () => {
+    modal({
+      title: (
+        <div className="flex gap-1">
+          <IconPrinter className="h-5 w-5" />
+          Cetak Invoice Pemesanan
+        </div>
+      ),
+      body: (
+        <PaymentsPrint
+          id={row.original.id}
+          siteName={sites?.name ?? ""}
+          siteFileUrl={sites?.fileProofUrl ?? ""}
+          siteAddress={sites?.address ?? ""}
+          siteEmail={sites?.email ?? ""}
+          sitePhone={sites?.phone ?? ""}
+        />
+      ),
+      size: "sm:max-w-2xl",
+    });
+  };
   return (
     <div className="flex gap-1 flex-col md:flex-row w">
+      <Button
+        variant="ghost"
+        size={"sm"}
+        className="bg-green-700 hover:bg-green-600 text-white hover:text-slate-50"
+        onClick={() => showModalPrint()}
+      >
+        <IconPrinter />
+        Cetak
+      </Button>
       <Button variant="outline" size={"sm"} onClick={() => showModalDetail()}>
         <SearchCheck />
         Detail

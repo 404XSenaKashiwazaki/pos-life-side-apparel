@@ -12,13 +12,13 @@ const CardSection = dynamic(() => import("./order"), {
   ssr: false,
 });
 
-const PrintSection = () => {
-  return (
-    <CardSection
-      id={["cmi7pfufn0001j7ostonwli39", "cmi8moxm60001j77wi7qzl1xa"]}
-      status="PENDING"
-    />
-  );
+interface PrintSectionProps {
+  id: string[];
+  status: string;
+}
+
+const PrintSection: React.FC<PrintSectionProps> = ({ id, status }) => {
+  return <CardSection id={id} status={status.toUpperCase()} />;
 };
 
 export default PrintSection;

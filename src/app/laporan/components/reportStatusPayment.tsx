@@ -27,7 +27,12 @@ const ReportStatusPayment = () => {
       include: {
         order: {
           include: {
-            items: true;
+            designs: true;
+            items: {
+              include: {
+                products: true;
+              };
+            };
             customer: true;
           };
         };

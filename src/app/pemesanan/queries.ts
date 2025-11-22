@@ -15,7 +15,7 @@ export const getOrders = async (): Promise<
         items: {
           include: {
             production: true,
-            products: true
+            products: true,
           },
         },
         customer: true,
@@ -48,6 +48,7 @@ export const getOrderById = async (
     Prisma.OrderGetPayload<{
       include: {
         customer: true;
+        payments: true;
         items: {
           include: {
             products: true;
@@ -71,6 +72,7 @@ export const getOrderById = async (
       where: { id },
       include: {
         customer: true,
+        payments: true,
         items: {
           include: {
             products: true,

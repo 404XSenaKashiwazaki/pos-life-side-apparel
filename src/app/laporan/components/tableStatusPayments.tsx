@@ -15,6 +15,7 @@ import { Prisma } from "@prisma/client";
 import { IconFileReport } from "@tabler/icons-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface TableStatusPaymentProps {
   status: string;
@@ -22,7 +23,12 @@ interface TableStatusPaymentProps {
     include: {
       order: {
         include: {
-          items: true;
+          items: {
+            include: {
+              products: true;
+            };
+          };
+          designs: true;
           customer: true;
         };
       };
@@ -31,21 +37,26 @@ interface TableStatusPaymentProps {
 }
 
 const TableStatusPayment = ({ status, data }: TableStatusPaymentProps) => {
+  const router = useRouter();
+
+  const handlePrint = () => {
+    const ids = data.map((e) => `id=${e.id}`).join("&");
+    router.push(`/cetak-pembayaran?${ids}&status=${status}`);
+  };
   const total = data.reduce((acc, curr) => acc + Number(curr.amount), 0);
   return (
     <div>
       <div>
-        <Link href={"/cetak-pembayaran"}>
-          <Button
-            variant="default"
-            aria-label="Submit"
-            size={"sm"}
-            disabled={data.length == 0 ? true : false}
-          >
-            <IconFileReport />
-            Cetak PDF
-          </Button>
-        </Link>
+        <Button
+          size={"sm"}
+          variant="default"
+          aria-label="Submit"
+          onClick={() => handlePrint()}
+          disabled={data.length == 0 ? true : false}
+        >
+          <IconFileReport />
+          Cetak PDF
+        </Button>
       </div>
       <Table className="mb-3 md:mb-5">
         <TableCaption>
@@ -69,7 +80,7 @@ const TableStatusPayment = ({ status, data }: TableStatusPaymentProps) => {
                 {d.order.orderNumber}
               </TableCell>
               <TableCell>{d.order.customer.name}</TableCell>
-              <TableCell>{d.order.items[0].product}</TableCell>
+              <TableCell>{d.order.items[0].products.name}</TableCell>
               <TableCell>{d.status}</TableCell>
               <TableCell>{format(d.createdAt, "PPP")}</TableCell>
               <TableCell>{d.order.items[0].quantity}</TableCell>
