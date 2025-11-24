@@ -30,7 +30,7 @@ export default function Page({
 
   return (
     <div className="container mx-auto py-10">
-      <PrintSection id={toArray(ids)} status={status ?? ""} />
+      <PrintSection id={toArray(ids)} status={(status as string) ?? ""} />
     </div>
   );
 }
