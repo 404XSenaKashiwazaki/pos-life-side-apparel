@@ -17,6 +17,7 @@ export default async function middleware(request: NextRequest) {
     "/cetak-pembayaran",
     "/cetak-pemesanan",
     "/metode-pembayaran",
+    "/produk",
   ];
 
   const adminRoute = protectedRoute;
@@ -49,7 +50,10 @@ export default async function middleware(request: NextRequest) {
 
     const allowedRoutes = roleAccessMap[role];
 
-    if (protectedRoute.includes(currentUrl) && !allowedRoutes.includes(currentUrl)) {
+    if (
+      protectedRoute.includes(currentUrl) &&
+      !allowedRoutes.includes(currentUrl)
+    ) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
