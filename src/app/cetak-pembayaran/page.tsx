@@ -1,4 +1,4 @@
-import React from "react";
+import React, { use } from "react";
 import { Metadata } from "next";
 import PrintSection from "./components/print";
 
@@ -8,21 +8,14 @@ export const metadata: Metadata = {
   } - Cetak Laporan`,
 };
 
-export interface PageProps {
-  searchParams?: {
-    id?: string | string[];
-    status: string;
-    [key: string]: string | string[] | undefined;
-  };
-}
-export default function Page({
-  searchParams,
-}: {
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
-  const ids = searchParams?.id;
-  const status = searchParams?.status;
+type Params = Promise<{ id: string | string[]; status: string }>;
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
+export default function Page(props: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
+  const { id, status } = use(props.searchParams);
   const toArray = (value: string | string[] | undefined): string[] => {
     if (!value) return [];
     return Array.isArray(value) ? value : [value];
@@ -30,7 +23,8 @@ export default function Page({
 
   return (
     <div className="container mx-auto py-10">
-      <PrintSection id={toArray(ids)} status={(status as string) ?? ""} />
+      <PrintSection id={toArray(id) ?? []} status={status as string ?? ""} />
     </div>
   );
 }
+

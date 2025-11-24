@@ -5,7 +5,12 @@ import { PrintOrders } from "@/types/datatable";
 import React, { useEffect, useRef, useState, useTransition } from "react";
 import { byOrders } from "../queries";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IconFileExport, IconPhone, IconPrinter } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconFileExport,
+  IconPhone,
+  IconPrinter,
+} from "@tabler/icons-react";
 import Image from "next/image";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Button } from "@/components/ui/button";
@@ -13,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { useReactToPrint } from "react-to-print";
+import Link from "next/link";
 
 interface OrdersPrintProps {
   id: string[];
@@ -63,11 +69,19 @@ const OrdersPrint: React.FC<OrdersPrintProps> = ({ id, status }) => {
           <IconPrinter className="h-5 w-5" />
           Cetak Laporan
         </div>
-        <div className="flex gap-1 mb-5 text-m font-semibold">
-          <Button size={"sm"} variant={"default"} onClick={reactToPrintFn}>
-            <IconFileExport className="h-5 w-5" />
-            PDF
-          </Button>
+
+        <div className="flex gap-2 flex-col sm:flex-row sm:justify-between">
+          <Link href={"/laporan"} className="flex gap-1">
+            <Button size={"sm"} variant={"outline"} >
+              <IconArrowLeft className="h-5 w-5" /> Kembali
+            </Button>
+          </Link>
+          <div className="flex gap-1 mb-5 text-m font-semibold">
+            <Button size={"sm"} variant={"default"} onClick={reactToPrintFn}>
+              <IconFileExport className="h-5 w-5" />
+              PDF
+            </Button>
+          </div>
         </div>
       </div>
       <div ref={contentRef} className="px-5 py-2 mt-2">
