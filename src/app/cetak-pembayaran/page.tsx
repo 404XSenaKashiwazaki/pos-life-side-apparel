@@ -15,18 +15,22 @@ export interface PageProps {
     [key: string]: string | string[] | undefined;
   };
 }
-const Page: React.FC<PageProps> = async ({ searchParams }) => {
-  const ids = await searchParams;
+export default function Page({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
+  const ids = searchParams?.id;
+  const status = searchParams?.status;
 
   const toArray = (value: string | string[] | undefined): string[] => {
     if (!value) return [];
     return Array.isArray(value) ? value : [value];
   };
+
   return (
     <div className="container mx-auto py-10">
-      <PrintSection id={toArray(ids?.id) ?? []} status={ids?.status ?? ""} />
+      <PrintSection id={toArray(ids)} status={status ?? ""} />
     </div>
   );
-};
-
-export default Page;
+}
